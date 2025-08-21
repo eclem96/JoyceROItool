@@ -3,13 +3,12 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Joyce Window ROI – Simple (Years Slider)</title>
+<title>Joyce Window ROI – Simple (Years + Email)</title>
 <style>
-  /* Brand-inspired palette (Joyce blue + fresh green) */
   :root{
-    --brand:#0C5AA6;   /* deep blue */
+    --brand:#0C5AA6;      /* Joyce deep blue */
     --brand-600:#0a4a88;
-    --accent:#17a34a;  /* green positive */
+    --accent:#17a34a;     /* positive green */
     --ink:#17212b;
     --muted:#f4f7fb;
     --line:#e6edf5;
@@ -23,8 +22,8 @@
   .sub{margin:0 0 14px;color:#5b6774}
   .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0}
   label{display:block;font-size:.95rem;margin:8px 0 6px}
-  input[type="number"],input[type="text"]{
-    width:100%;padding:10px;border:1px solid #d6dde6;border-radius:10px;font-size:1rem
+  input[type="number"],input[type="text"],input[type="email"]{
+    width:100%;padding:10px;border:1px solid #d6dde6;border-radius:10px;font-size:1rem;background:#fff
   }
   .row{display:flex;gap:12px}.row>*{flex:1}
   @media (max-width:720px){.row{flex-direction:column}}
@@ -52,6 +51,16 @@
   .slider-wrap{padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--muted)}
   input[type=range]{width:100%}
   .brand{color:var(--brand);font-weight:700}
+
+  /* Modal (Email) */
+  .modal{position:fixed;inset:0;display:none;background:rgba(0,0,0,.35);align-items:center;justify-content:center;padding:20px;z-index:1000}
+  .modal.open{display:flex}
+  .modal .sheet{background:#fff;border-radius:12px;max-width:520px;width:100%;padding:16px;border:1px solid #dfe5ee}
+  .sheet h4{margin:0 0 8px}
+  .sheet .row{margin:8px 0}
+  .sheet .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:10px}
+  .small{font-size:.82rem;color:#5b6670}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:.85rem}
 </style>
 </head>
 <body>
@@ -115,13 +124,41 @@
       <div class="kpi"><div class="val" id="kROI">$—</div><div class="note">Net ROI (Return − Cost)</div></div>
     </div>
     <div class="note" id="explain" style="margin-top:10px"></div>
-    <div style="margin-top:12px"><button class="btn" onclick="calc()">Recalculate</button></div>
+    <div style="display:flex;gap:10px;margin-top:12px">
+      <button class="btn" onclick="calc()">Recalculate</button>
+      <button class="btn" style="background:#0b7e3b" onclick="openEmail()">Email me this estimate</button>
+    </div>
   </div>
 
   <p class="note">
     Assumptions: Resale recoup of 70% at the year you move (est.) • Energy bill inflation varies by ZIP region • Efficiency assumptions:
     Good (J2 double Low‑E) ≈18%, Better (J31 + Super Spacer) ≈24%, Best (J31) ≈28% (Triple‑pane adds +2%). Prices vary by size/type.
   </p>
+</div>
+
+<!-- EMAIL MODAL -->
+<div id="emailModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="emailTitle">
+  <div class="sheet">
+    <h4 id="emailTitle">Email this estimate</h4>
+    <div class="row"><div>
+      <label>Your Name</label>
+      <input type="text" id="leadName" placeholder="Jane Doe">
+    </div></div>
+    <div class="row"><div>
+      <label>Your Email</label>
+      <input type="email" id="leadEmail" placeholder="you@example.com">
+    </div></div>
+    <div class="small" style="margin-top:6px">We generate a pre‑filled email with your current selections. If your mail app doesn’t open, use “Copy summary.”</div>
+    <div class="actions">
+      <button type="button" class="btn" style="background:#f3f6fa;color:#0b1220;border:1px solid #dfe5ee" onclick="copySummary()">Copy summary</button>
+      <button type="button" class="btn" onclick="sendEmail()">Send email</button>
+      <button type="button" class="btn" style="background:#f3f6fa;color:#0b1220;border:1px solid #dfe5ee" onclick="closeEmail()">Close</button>
+    </div>
+    <details style="margin-top:10px"><summary class="small">What gets sent?</summary>
+      <pre class="mono" id="previewBox" style="white-space:pre-wrap;max-height:220px;overflow:auto;background:#f8fafc;border:1px solid #e8edf3;border-radius:8px;padding:8px"></pre>
+    </details>
+    <div id="copyMsg" class="small" style="margin-top:6px"></div>
+  </div>
 </div>
 
 <script>
@@ -214,6 +251,46 @@
       `Includes ${Math.round(RECOUP*100)}% resale value at <strong>year ${years}</strong> + cumulative energy savings with ` +
       `regional energy inflation of <strong>${(infl*100).toFixed(1)}%/yr</strong>, assuming <strong>${effPct}%</strong> efficiency for ` +
       `<strong>${tier.label}</strong> (${tier.glass}).`;
+
+    // Update email preview if modal is open
+    if (document.getElementById('emailModal').classList.contains('open')) updatePreview();
+  }
+
+  // --- Email modal helpers ---
+  function openEmail(){ document.getElementById('emailModal').classList.add('open'); updatePreview(); }
+  function closeEmail(){ document.getElementById('emailModal').classList.remove('open'); }
+  function buildSummary(){
+    const tierKey = currentTier(); const t = tiers[tierKey];
+    const years = +$('years').value;
+    const totalReturn = $('totalReturn').textContent;
+    const netInline = $('netRoiInline').textContent;
+    return [
+      `Joyce Window ROI Estimate`,
+      `Package: ${t.label} (${t.glass})`,
+      `ZIP: ${$('zip').value.trim()||'—'}`,
+      `Windows: ${$('num').value} | Upgrades: ${
+        ['paint','hardware','triple'].filter(id=>$(id).checked).join(', ')||'None'
+      }`,
+      `Total Return at ${years} years (Savings + Resale): ${totalReturn}`,
+      `Net ROI (after cost): ${netInline}`,
+      ``,
+      `Breakdown`,
+      `Installed cost: ${$('kCost').textContent}`,
+      `Energy savings (${years} yr): ${$('kSave').textContent}`,
+      `Resale recoup: ${$('kResale').textContent}`
+    ].join('\n');
+  }
+  function updatePreview(){ $('previewBox').textContent = buildSummary(); }
+  function copySummary(){
+    const txt = buildSummary();
+    navigator.clipboard.writeText(txt).then(()=>{ document.getElementById('copyMsg').textContent='Summary copied to clipboard.'; });
+  }
+  function sendEmail(){
+    const name = document.getElementById('leadName').value.trim();
+    const email = document.getElementById('leadEmail').value.trim();
+    const subject = encodeURIComponent('My Joyce Window ROI Estimate');
+    const body = encodeURIComponent((name?`Name: ${name}\n`:'') + (email?`Email: ${email}\n`:'') + '\n' + buildSummary());
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
   }
 
   // Wire events
@@ -222,7 +299,9 @@
     calc();
   });
   document.addEventListener('input', e=>{
-    if (['num','zip','paint','hardware','triple','years'].includes(e.target.id)) calc();
+    if (['num','zip','paint','hardware','triple','years','leadName','leadEmail'].includes(e.target.id)) {
+      calc();
+    }
   });
 
   // Init
