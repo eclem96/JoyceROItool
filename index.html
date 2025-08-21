@@ -3,10 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Joyce Window ROI – Simple (Years + Email)</title>
+<title>Joyce Window ROI – Simple + Manual Price Drawer</title>
 <style>
+  /* Joyce-inspired light palette */
   :root{
-    --brand:#0C5AA6;      /* Joyce deep blue */
+    --brand:#0C5AA6;      /* deep Joyce blue */
     --brand-600:#0a4a88;
     --accent:#17a34a;     /* positive green */
     --ink:#17212b;
@@ -14,13 +15,14 @@
     --line:#e6edf5;
     --warn:#fff6e5;
     --warn-line:#ffe0a6;
+    --shadow:0 10px 24px rgba(12, 90, 166, .08);
   }
   *{box-sizing:border-box}
   body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink);background:#fff}
-  .wrap{max-width:880px;margin:auto;padding:18px}
+  .wrap{max-width:880px;margin:auto;padding:18px 18px 120px} /* bottom padding leaves space for drawer handle */
   h1{font-size:1.35rem;margin:0 0 6px}
   .sub{margin:0 0 14px;color:#5b6774}
-  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0;box-shadow:var(--shadow)}
   label{display:block;font-size:.95rem;margin:8px 0 6px}
   input[type="number"],input[type="text"],input[type="email"]{
     width:100%;padding:10px;border:1px solid #d6dde6;border-radius:10px;font-size:1rem;background:#fff
@@ -51,11 +53,46 @@
   .slider-wrap{padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--muted)}
   input[type=range]{width:100%}
   .brand{color:var(--brand);font-weight:700}
+  .tiny{font-size:.8rem;color:#6b7280}
 
-  /* Modal (Email) */
-  .modal{position:fixed;inset:0;display:none;background:rgba(0,0,0,.35);align-items:center;justify-content:center;padding:20px;z-index:1000}
+  /* --- Bottom Manual Price Drawer (light theme to match estimator) --- */
+  .price-tab-handle{
+    position:fixed;left:50%;transform:translateX(-50%);bottom:12px;
+    background:#fff;border:1px solid var(--line);border-radius:999px;padding:10px 14px;
+    font-size:14px;display:flex;align-items:center;gap:10px;cursor:pointer;z-index:1001;
+    box-shadow:var(--shadow)
+  }
+  .price-tab-handle .chev{
+    width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:7px solid var(--brand);
+    transition:transform .25s ease;
+  }
+  .price-tab-handle[data-state="closed"] .chev{ transform:rotate(180deg); }
+
+  .price-drawer{
+    position:fixed;left:50%;transform:translateX(-50%);bottom:0;
+    width:min(920px, calc(100% - 24px));background:#fff;border:1px solid var(--line);border-bottom:none;
+    border-radius:14px 14px 0 0;box-shadow:var(--shadow);z-index:1000;overflow:clip;
+    transition:max-height .28s ease;max-height:420px;
+  }
+  .price-drawer[data-state="closed"]{ max-height:0;border-width:0;box-shadow:none; }
+  .drawer-inner{ padding: 16px 16px 18px; }
+  .drawer-header{ display:flex;align-items:center;gap:10px;margin-bottom:6px }
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px rgba(23,163,74,.12)}
+  .drawer-title{ font-size:15px;font-weight:700;letter-spacing:.2px }
+  .drawer-desc{ color:#5b6774;font-size:13px;margin-bottom:12px }
+  .field-row{ display:grid;grid-template-columns:1.1fr .9fr auto;gap:12px;align-items:end }
+  @media (max-width:700px){ .field-row{grid-template-columns:1fr} }
+  .label{ font-size:12px;color:#6b7280 }
+  .input{ appearance:none;outline:none;border:1px solid #d6dde6;background:#fff;color:#0b1220;padding:12px;border-radius:12px;font-size:16px;line-height:1.2 }
+  .help{ font-size:12px;color:#6b7280;margin-top:6px }
+  .btn-ghost{ background:#f8fafc;color:#0b1220;border:1px solid var(--line) }
+  .error{ color:#b91c1c;font-size:12px;margin-top:6px;display:none }
+  .error[aria-live="assertive"]{ display:block }
+
+  /* Email modal (from earlier simple tool) */
+  .modal{position:fixed;inset:0;display:none;background:rgba(0,0,0,.35);align-items:center;justify-content:center;padding:20px;z-index:1100}
   .modal.open{display:flex}
-  .modal .sheet{background:#fff;border-radius:12px;max-width:520px;width:100%;padding:16px;border:1px solid #dfe5ee}
+  .modal .sheet{background:#fff;border-radius:12px;max-width:520px;width:100%;padding:16px;border:1px solid var(--line)}
   .sheet h4{margin:0 0 8px}
   .sheet .row{margin:8px 0}
   .sheet .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:10px}
@@ -118,7 +155,7 @@
   <!-- Results -->
   <div class="card">
     <div class="kpis">
-      <div class="kpi"><div class="val" id="kCost">$—</div><div class="note">Estimated Installed Cost</div></div>
+      <div class="kpi"><div class="val" id="kCost">$—</div><div class="note">Estimated Installed Cost <span id="manualTag" class="tiny" style="display:none;">(manual)</span></div></div>
       <div class="kpi"><div class="val" id="kSave">$—</div><div class="note">Energy Savings (selected years)</div></div>
       <div class="kpi"><div class="val" id="kResale">$—</div><div class="note">Resale Value Recoup</div></div>
       <div class="kpi"><div class="val" id="kROI">$—</div><div class="note">Net ROI (Return − Cost)</div></div>
@@ -150,9 +187,9 @@
     </div></div>
     <div class="small" style="margin-top:6px">We generate a pre‑filled email with your current selections. If your mail app doesn’t open, use “Copy summary.”</div>
     <div class="actions">
-      <button type="button" class="btn" style="background:#f3f6fa;color:#0b1220;border:1px solid #dfe5ee" onclick="copySummary()">Copy summary</button>
+      <button type="button" class="btn btn-ghost" onclick="copySummary()">Copy summary</button>
       <button type="button" class="btn" onclick="sendEmail()">Send email</button>
-      <button type="button" class="btn" style="background:#f3f6fa;color:#0b1220;border:1px solid #dfe5ee" onclick="closeEmail()">Close</button>
+      <button type="button" class="btn btn-ghost" onclick="closeEmail()">Close</button>
     </div>
     <details style="margin-top:10px"><summary class="small">What gets sent?</summary>
       <pre class="mono" id="previewBox" style="white-space:pre-wrap;max-height:220px;overflow:auto;background:#f8fafc;border:1px solid #e8edf3;border-radius:8px;padding:8px"></pre>
@@ -160,6 +197,63 @@
     <div id="copyMsg" class="small" style="margin-top:6px"></div>
   </div>
 </div>
+
+<!-- BOTTOM DRAWER: Manual Project Price -->
+<button id="priceTabHandle" class="price-tab-handle" type="button" aria-controls="priceDrawer" aria-expanded="true">
+  <span class="chev" aria-hidden="true"></span>
+  <strong>Project Price</strong>
+  <span id="priceTabSummary" class="note">$0.00</span>
+</button>
+
+<section id="priceDrawer" class="price-drawer" aria-label="Project Price Tab" data-state="open">
+  <div class="drawer-inner">
+    <div class="drawer-header">
+      <span class="dot" aria-hidden="true"></span>
+      <div class="drawer-title">Manual Project Price</div>
+    </div>
+    <div class="drawer-desc">
+      Reps can enter or adjust the price for this project. If a manual price is saved, the calculator uses it and marks cost as <em>(manual)</em>.
+    </div>
+
+    <form id="priceForm" novalidate>
+      <div class="field-row">
+        <div class="field">
+          <label for="priceInput" class="label">Price (manual entry)</label>
+          <input
+            id="priceInput"
+            class="input"
+            type="text"
+            inputmode="decimal"
+            autocomplete="off"
+            placeholder="$0.00"
+            aria-describedby="priceHelp priceError"
+            data-locale="en-US"
+            data-currency="USD"
+          />
+          <div id="priceHelp" class="help">Enter a number (e.g., 12000, 12,000.50, or $12,000).</div>
+          <div id="priceError" class="error" role="alert"></div>
+        </div>
+
+        <div class="field">
+          <label for="priceNotes" class="label">Internal note (optional)</label>
+          <input id="priceNotes" class="input" type="text" placeholder="e.g., Discount applied for Q4 promo" />
+        </div>
+
+        <div class="field" style="align-self:center;">
+          <button id="savePriceBtn" class="btn" type="submit" title="Save price">Save Price</button>
+        </div>
+      </div>
+
+      <!-- Hidden raw numeric (cents) -->
+      <input type="hidden" id="projectPriceCents" value="0" />
+    </form>
+
+    <div class="row-actions" style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px">
+      <button id="clearPriceBtn" class="btn btn-ghost" type="button">Clear</button>
+      <button id="closeDrawerBtn" class="btn btn-ghost" type="button">Close</button>
+    </div>
+  </div>
+</section>
 
 <script>
   // ---------- Helpers & Constants ----------
@@ -200,6 +294,51 @@
     return pct/100;
   }
 
+  // ----- Manual Price Drawer utilities -----
+  const priceDrawer = $('priceDrawer');
+  const priceHandle = $('priceTabHandle');
+  const priceSummary = $('priceTabSummary');
+  const priceInput = $('priceInput');
+  const priceError = $('priceError');
+  const priceNotes = $('priceNotes');
+  const hiddenCents = $('projectPriceCents');
+  const saveBtn = $('savePriceBtn');
+  const clearBtn = $('clearPriceBtn');
+  const closeBtn = $('closeDrawerBtn');
+  const priceForm = $('priceForm');
+
+  function parseMoneyToCents(raw){
+    if (raw == null) return null;
+    const cleaned = String(raw).trim()
+      .replace(/[^0-9.,-]/g, '')
+      .replace(/(,)(?=\d{3}\b)/g, '') // drop thousands commas
+      .replace(/(?!^)-/g,'');
+    if (!cleaned) return null;
+    let normalized = cleaned;
+    const hasComma = cleaned.includes(','), hasDot = cleaned.includes('.');
+    if (hasComma && !hasDot){ normalized = cleaned.replace(',','.'); }
+    else { normalized = cleaned.replace(/,/g,''); }
+    const num = Number(normalized);
+    if (!isFinite(num)) return null;
+    return Math.round(num * 100);
+  }
+  function formatCents(cents, locale='en-US', currency='USD'){
+    const n = (Number(cents)||0)/100;
+    try{ return new Intl.NumberFormat(locale,{style:'currency',currency}).format(n); }
+    catch{ return '$'+n.toFixed(2); }
+  }
+  function updatePriceSummary(){ priceSummary.textContent = formatCents(hiddenCents.value||0); }
+  function setDrawerOpen(isOpen){
+    priceDrawer.dataset.state = isOpen ? 'open' : 'closed';
+    priceHandle.dataset.state = isOpen ? 'open' : 'closed';
+    priceHandle.setAttribute('aria-expanded', String(isOpen));
+  }
+  function setPriceError(msg){
+    if (msg){ priceError.textContent = msg; priceError.setAttribute('aria-live','assertive'); }
+    else { priceError.textContent = ''; priceError.removeAttribute('aria-live'); }
+  }
+
+  // ----- Core calculator -----
   function calc(){
     const nWindows = Math.max(1, +$('num').value||1);
     const years = +$('years').value;
@@ -215,9 +354,15 @@
       if ($('hardware').checked) perWindow += 100;
       if ($('triple').checked)   perWindow += 100;
     }
-    const installed = perWindow * nWindows;
+    const autoInstalled = perWindow * nWindows;
 
-    // Efficiency
+    // Use manual price if provided (>0)
+    const manualCents = Number(hiddenCents.value||0);
+    const usingManual = manualCents > 0;
+    const installed = usingManual ? (manualCents/100) : autoInstalled;
+    $('manualTag').style.display = usingManual ? 'inline' : 'none';
+
+    // Efficiency (triple-pane adds +2 if allowed and checked)
     let effPct = tier.eff + ((tier.allowUpgrades && $('triple').checked) ? 2 : 0);
     const eff = effPct/100;
 
@@ -227,7 +372,7 @@
     // Energy savings across chosen years (bill inflates each year)
     let bill = AVG_BILL, savings = 0;
     for (let y=1; y<=years; y++){
-      savings += bill * eff * 12; // year's savings
+      savings += bill * eff * 12;
       bill *= (1 + infl);
     }
 
@@ -235,8 +380,8 @@
     const resale = installed * RECOUP;
 
     // Totals
-    const totalReturn = savings + resale;           // what they "get back" before cost
-    const netROI = totalReturn - installed;         // benefit net of cost
+    const totalReturn = savings + resale;
+    const netROI = totalReturn - installed;
 
     // Output
     $('kCost').textContent = money(installed);
@@ -250,494 +395,98 @@
     $('explain').innerHTML =
       `Includes ${Math.round(RECOUP*100)}% resale value at <strong>year ${years}</strong> + cumulative energy savings with ` +
       `regional energy inflation of <strong>${(infl*100).toFixed(1)}%/yr</strong>, assuming <strong>${effPct}%</strong> efficiency for ` +
-      `<strong>${tier.label}</strong> (${tier.glass}).`;
+      `<strong>${tier.label}</strong> (${tier.glass}). ` +
+      (usingManual ? `<span class="tiny">(Using <strong>manual</strong> project price)</span>` : `<span class="tiny">(Using auto price from package & upgrades)</span>`);
 
     // Update email preview if modal is open
-    if (document.getElementById('emailModal').classList.contains('open')) updatePreview();
+    if ($('emailModal').classList.contains('open')) updatePreview();
   }
 
-  // --- Email modal helpers ---
-  function openEmail(){ document.getElementById('emailModal').classList.add('open'); updatePreview(); }
-  function closeEmail(){ document.getElementById('emailModal').classList.remove('open'); }
+  // ----- Email modal helpers -----
+  function openEmail(){ $('emailModal').classList.add('open'); updatePreview(); }
+  function closeEmail(){ $('emailModal').classList.remove('open'); }
   function buildSummary(){
     const tierKey = currentTier(); const t = tiers[tierKey];
     const years = +$('years').value;
-    const totalReturn = $('totalReturn').textContent;
-    const netInline = $('netRoiInline').textContent;
+    const usingManual = Number(hiddenCents.value||0) > 0;
+    const upgrades = ['paint','hardware','triple'].filter(id=>$(id).checked).join(', ') || 'None';
     return [
       `Joyce Window ROI Estimate`,
       `Package: ${t.label} (${t.glass})`,
       `ZIP: ${$('zip').value.trim()||'—'}`,
-      `Windows: ${$('num').value} | Upgrades: ${
-        ['paint','hardware','triple'].filter(id=>$(id).checked).join(', ')||'None'
-      }`,
-      `Total Return at ${years} years (Savings + Resale): ${totalReturn}`,
-      `Net ROI (after cost): ${netInline}`,
-      ``,
-      `Breakdown`,
-      `Installed cost: ${$('kCost').textContent}`,
+      `Windows: ${$('num').value} | Upgrades: ${upgrades}`,
+      `Installed cost${usingManual?' (manual)':''}: ${$('kCost').textContent}`,
       `Energy savings (${years} yr): ${$('kSave').textContent}`,
-      `Resale recoup: ${$('kResale').textContent}`
+      `Resale recoup: ${$('kResale').textContent}`,
+      `Total Return (Savings + Resale): ${$('totalReturn').textContent}`,
+      `Net ROI (after cost): ${$('netRoiInline').textContent}`,
+      '',
+      `Rep note: ${$('priceNotes').value || '—'}`
     ].join('\n');
   }
   function updatePreview(){ $('previewBox').textContent = buildSummary(); }
   function copySummary(){
     const txt = buildSummary();
-    navigator.clipboard.writeText(txt).then(()=>{ document.getElementById('copyMsg').textContent='Summary copied to clipboard.'; });
+    navigator.clipboard.writeText(txt).then(()=>{ $('copyMsg').textContent='Summary copied to clipboard.'; });
   }
   function sendEmail(){
-    const name = document.getElementById('leadName').value.trim();
-    const email = document.getElementById('leadEmail').value.trim();
+    const name = $('leadName').value.trim();
+    const email = $('leadEmail').value.trim();
     const subject = encodeURIComponent('My Joyce Window ROI Estimate');
     const body = encodeURIComponent((name?`Name: ${name}\n`:'') + (email?`Email: ${email}\n`:'') + '\n' + buildSummary());
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   }
 
-  // Wire events
+  // ----- Events wiring -----
   document.addEventListener('change', e=>{
     if (e.target.name==='tier'){ applyTierRules(); }
     calc();
   });
   document.addEventListener('input', e=>{
-    if (['num','zip','paint','hardware','triple','years','leadName','leadEmail'].includes(e.target.id)) {
-      calc();
-    }
+    if (['num','zip','paint','hardware','triple','years','leadName','leadEmail'].includes(e.target.id)) calc();
+  });
+
+  // Drawer interactions
+  priceHandle.addEventListener('click', ()=>{ setDrawerOpen(priceDrawer.dataset.state==='closed'); });
+  closeBtn.addEventListener('click', ()=> setDrawerOpen(false));
+
+  priceInput.addEventListener('blur', ()=>{
+    const cents = parseMoneyToCents(priceInput.value);
+    if (priceInput.value.trim()===''){ setPriceError(''); return; }
+    if (cents==null){ setPriceError('Please enter a valid number.'); return; }
+    priceInput.value = formatCents(cents);
+    setPriceError('');
+  });
+
+  priceForm.addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const cents = parseMoneyToCents(priceInput.value);
+    if (cents==null){ setPriceError('Please enter a valid number.'); return; }
+    hiddenCents.value = String(cents);
+    updatePriceSummary(); setPriceError('');
+    const detail = { cents, value:cents/100, formatted:formatCents(cents), note:priceNotes.value||null, timestamp:new Date().toISOString() };
+    window.dispatchEvent(new CustomEvent('projectPriceChanged',{ detail }));
+    // quick feedback
+    saveBtn.disabled = true; const old = saveBtn.textContent; saveBtn.textContent='Saved';
+    setTimeout(()=>{ saveBtn.disabled=false; saveBtn.textContent=old; }, 800);
+    calc();
+  });
+
+  clearBtn.addEventListener('click', ()=>{
+    priceInput.value=''; priceNotes.value=''; hiddenCents.value=0;
+    updatePriceSummary(); setPriceError('');
+    window.dispatchEvent(new CustomEvent('projectPriceChanged',{ detail:{ cents:0, value:0, formatted:formatCents(0), note:null, timestamp:new Date().toISOString() }}));
+    calc();
   });
 
   // Init
-  applyTierRules(); calc();
+  function updatePriceSummary(){ priceSummary.textContent = formatCents(hiddenCents.value||0); }
+  function setDrawerOpen(isOpen){
+    priceDrawer.dataset.state = isOpen ? 'open' : 'closed';
+    priceHandle.dataset.state = isOpen ? 'open' : 'closed';
+    priceHandle.setAttribute('aria-expanded', String(isOpen));
+  }
+  applyTierRules(); setDrawerOpen(true); updatePriceSummary(); calc();
 </script>
 </body>
 </html>
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Tool with Bottom Price Tab</title>
-  <style>
-    :root{
-      --ec-bg:#0f172a;        /* slate-900 */
-      --ec-surface:#111827;   /* gray-900 */
-      --ec-card:#1f2937;      /* gray-800 */
-      --ec-text:#f8fafc;      /* slate-50 */
-      --ec-muted:#94a3b8;     /* slate-400 */
-      --ec-accent:#22c55e;    /* green-500 */
-      --ec-danger:#ef4444;    /* red-500 */
-      --ec-border:#334155;    /* slate-700 */
-      --shadow: 0 8px 24px rgba(0,0,0,.3);
-      --radius: 16px;
-    }
-
-    html,body{
-      height:100%;
-      margin:0;
-      background:var(--ec-bg);
-      color:var(--ec-text);
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji","Segoe UI Emoji";
-    }
-
-    /* Demo content area (replace with your tool/app) */
-    .app-shell{
-      min-height:100%;
-      box-sizing:border-box;
-      padding:24px 24px 120px; /* bottom padding leaves room for the tab */
-    }
-    .demo-card{
-      background:var(--ec-card);
-      border:1px solid var(--ec-border);
-      border-radius: var(--radius);
-      padding:24px;
-      max-width:900px;
-      margin:0 auto;
-      box-shadow: var(--shadow);
-    }
-
-    /* Bottom Tab (collapsed handle) */
-    .price-tab-handle{
-      position:fixed;
-      left:50%;
-      transform:translateX(-50%);
-      bottom:12px;
-      background:var(--ec-surface);
-      color:var(--ec-text);
-      border:1px solid var(--ec-border);
-      border-radius: var(--radius);
-      padding:10px 14px;
-      font-size:14px;
-      display:flex;
-      align-items:center;
-      gap:10px;
-      cursor:pointer;
-      z-index: 1001;
-      box-shadow: var(--shadow);
-      user-select:none;
-    }
-    .price-tab-handle .chev{
-      display:inline-block;
-      width: 0; height: 0;
-      border-left:6px solid transparent;
-      border-right:6px solid transparent;
-      border-top:7px solid var(--ec-text); /* up by default (open) */
-      transition: transform .25s ease;
-    }
-    .price-tab-handle[data-state="closed"] .chev{
-      transform: rotate(180deg); /* points down when closed */
-    }
-
-    /* Bottom Drawer */
-    .price-drawer{
-      position:fixed;
-      left:50%;
-      transform: translateX(-50%);
-      bottom:0;
-      width:min(920px, calc(100% - 24px));
-      background:var(--ec-surface);
-      border:1px solid var(--ec-border);
-      border-bottom: none;
-      border-radius: var(--radius) var(--radius) 0 0;
-      box-shadow: var(--shadow);
-      z-index: 1000;
-      overflow:clip;
-      transition: max-height .28s ease;
-      max-height: 420px; /* open */
-    }
-    .price-drawer[data-state="closed"]{
-      max-height: 0; /* hidden but mounted for smoother open */
-      border-width:0;
-      box-shadow:none;
-    }
-    .drawer-inner{
-      padding: 18px 18px 20px;
-    }
-
-    .drawer-header{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      margin-bottom: 12px;
-    }
-    .dot{
-      width:9px;height:9px;border-radius:50%;
-      background:var(--ec-accent);
-      box-shadow: 0 0 0 3px rgba(34,197,94,.15);
-    }
-    .drawer-title{
-      font-size: 15px;
-      font-weight: 600;
-      letter-spacing:.2px;
-    }
-    .drawer-desc{
-      color: var(--ec-muted);
-      font-size: 13px;
-      margin-bottom: 16px;
-    }
-
-    /* Form */
-    .field-row{
-      display:grid;
-      grid-template-columns: 1.2fr .8fr auto;
-      gap:12px;
-      align-items:end;
-    }
-    .field{
-      display:flex;
-      flex-direction: column;
-      gap:6px;
-    }
-    .label{
-      font-size: 12px;
-      color: var(--ec-muted);
-    }
-    .input{
-      appearance:none;
-      outline:none;
-      border:1px solid var(--ec-border);
-      background: var(--ec-bg);
-      color: var(--ec-text);
-      padding: 12px 12px;
-      border-radius: 12px;
-      font-size: 16px;
-      line-height: 1.2;
-      transition: border-color .2s ease, box-shadow .2s ease;
-      width:100%;
-    }
-    .input:focus{
-      border-color: var(--ec-accent);
-      box-shadow: 0 0 0 3px rgba(34,197,94,.15);
-    }
-    .help{
-      font-size:12px;color:var(--ec-muted);margin-top:6px;
-    }
-
-    .btn{
-      appearance:none;border:0;cursor:pointer;
-      padding: 12px 16px;
-      border-radius: 12px;
-      font-size: 14px;
-      font-weight:600;
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      transition: transform .02s ease, filter .2s ease;
-      white-space:nowrap;
-    }
-    .btn:active{ transform: translateY(1px); }
-    .btn-primary{
-      background:var(--ec-accent); color:#052e16;
-    }
-    .btn-ghost{
-      background:transparent; color:var(--ec-text);
-      border:1px solid var(--ec-border);
-    }
-    .btn[disabled]{
-      opacity:.6; cursor:not-allowed;
-    }
-
-    .row-actions{
-      display:flex; gap:10px; justify-content:flex-end; margin-top: 14px;
-    }
-
-    .error{
-      color: var(--ec-danger);
-      font-size: 12px;
-      margin-top: 6px;
-      display:none;
-    }
-    .error[aria-live="assertive"]{ display:block; }
-
-    @media (max-width:700px){
-      .field-row{
-        grid-template-columns: 1fr;
-        align-items:stretch;
-      }
-      .row-actions{ justify-content: stretch; }
-      .btn{ justify-content:center; }
-    }
-  </style>
-</head>
-<body>
-  <div class="app-shell">
-    <!-- Replace this block with your existing tool UI -->
-    <div class="demo-card">
-      <h2 style="margin:0 0 8px;">Your Tool</h2>
-      <p style="margin:0;color:var(--ec-muted)">
-        Demo content area. The sticky bottom tab below lets reps manually enter a Project Price any time.
-      </p>
-    </div>
-  </div>
-
-  <!-- Collapsed handle / toggle -->
-  <button id="priceTabHandle" class="price-tab-handle" type="button" aria-controls="priceDrawer" aria-expanded="true">
-    <span class="chev" aria-hidden="true"></span>
-    <strong>Project Price</strong>
-    <span id="priceTabSummary" style="color:var(--ec-muted)">$0.00</span>
-  </button>
-
-  <!-- Bottom drawer -->
-  <section id="priceDrawer" class="price-drawer" aria-label="Project Price Tab" data-state="open">
-    <div class="drawer-inner">
-      <div class="drawer-header">
-        <span class="dot" aria-hidden="true"></span>
-        <div class="drawer-title">Manual Project Price</div>
-      </div>
-      <div class="drawer-desc">
-        Reps can enter or adjust the price for this project. Value is stored and broadcast to your app.
-      </div>
-
-      <form id="priceForm" novalidate>
-        <div class="field-row">
-          <div class="field">
-            <label for="priceInput" class="label">Price (manual entry)</label>
-            <input
-              id="priceInput"
-              class="input"
-              type="text"
-              inputmode="decimal"
-              autocomplete="off"
-              placeholder="$0.00"
-              aria-describedby="priceHelp priceError"
-              data-locale="en-US"
-              data-currency="USD"
-            />
-            <div id="priceHelp" class="help">Enter a number (e.g., 12000, 12,000.50, or $12,000).</div>
-            <div id="priceError" class="error" role="alert"></div>
-          </div>
-
-          <div class="field">
-            <label for="priceNotes" class="label">Internal note (optional)</label>
-            <input id="priceNotes" class="input" type="text" placeholder="e.g., Discount applied for Q4 promo" />
-          </div>
-
-          <div class="field" style="align-self:center;">
-            <button id="savePriceBtn" class="btn btn-primary" type="submit" title="Save price">
-              Save Price
-            </button>
-          </div>
-        </div>
-
-        <!-- Hidden raw numeric (cents) for easy machine use -->
-        <input type="hidden" id="projectPriceCents" value="0" />
-      </form>
-
-      <div class="row-actions">
-        <button id="clearPriceBtn" class="btn btn-ghost" type="button">Clear</button>
-        <button id="closeDrawerBtn" class="btn btn-ghost" type="button">Close</button>
-      </div>
-    </div>
-  </section>
-
-  <script>
-    // -------- Utilities
-    const $ = (sel, root=document) => root.querySelector(sel);
-
-    function parseMoneyToCents(raw){
-      if (raw == null) return null;
-      // Strip everything except digits, dot, and comma
-      const cleaned = String(raw).trim()
-        .replace(/[^0-9.,-]/g, '')
-        .replace(/(,)(?=\d{3}\b)/g, '') // drop thousands commas like 12,345
-        .replace(/(?!^)-/g,''); // keep only leading minus if any
-      if (!cleaned) return null;
-
-      // If both comma and dot exist, assume dot is decimal
-      let normalized = cleaned;
-      const hasComma = cleaned.includes(',');
-      const hasDot = cleaned.includes('.');
-      if (hasComma && !hasDot){
-        // Treat comma as decimal (e.g., 123,45)
-        normalized = cleaned.replace(',','.');
-      } else {
-        // remove any lingering commas
-        normalized = cleaned.replace(/,/g,'');
-      }
-
-      const num = Number(normalized);
-      if (!isFinite(num)) return null;
-
-      // Round to cents
-      return Math.round(num * 100);
-    }
-
-    function formatCents(cents, locale='en-US', currency='USD'){
-      const n = (Number(cents)||0)/100;
-      try{
-        return new Intl.NumberFormat(locale, { style:'currency', currency }).format(n);
-      }catch{
-        return `$${n.toFixed(2)}`;
-      }
-    }
-
-    // -------- Elements
-    const drawer = $("#priceDrawer");
-    const handle = $("#priceTabHandle");
-    const summary = $("#priceTabSummary");
-    const priceInput = $("#priceInput");
-    const priceError = $("#priceError");
-    const hiddenCents = $("#projectPriceCents");
-    const saveBtn = $("#savePriceBtn");
-    const clearBtn = $("#clearPriceBtn");
-    const closeBtn = $("#closeDrawerBtn");
-    const form = $("#priceForm");
-
-    // State
-    function setOpen(isOpen){
-      drawer.dataset.state = isOpen ? 'open' : 'closed';
-      handle.dataset.state = isOpen ? 'open' : 'closed';
-      handle.setAttribute('aria-expanded', String(isOpen));
-    }
-
-    function updateSummary(){
-      summary.textContent = formatCents(hiddenCents.value || 0, priceInput.dataset.locale, priceInput.dataset.currency);
-    }
-
-    function setError(msg){
-      if (msg){
-        priceError.textContent = msg;
-        priceError.setAttribute('aria-live','assertive');
-      }else{
-        priceError.textContent = '';
-        priceError.removeAttribute('aria-live');
-      }
-    }
-
-    // Format on blur for nice display (keeps raw in hidden)
-    priceInput.addEventListener('blur', () => {
-      const cents = parseMoneyToCents(priceInput.value);
-      if (cents == null){
-        // allow empty
-        if (priceInput.value.trim() === ''){
-          hiddenCents.value = 0;
-          updateSummary();
-          setError('');
-          return;
-        }
-        setError('Please enter a valid number.');
-        return;
-      }
-      priceInput.value = formatCents(cents, priceInput.dataset.locale, priceInput.dataset.currency);
-      setError('');
-    });
-
-    // Save
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const cents = parseMoneyToCents(priceInput.value);
-      if (cents == null){
-        setError('Please enter a valid number.');
-        return;
-      }
-      hiddenCents.value = String(cents);
-      setError('');
-      updateSummary();
-
-      // Emit a detail event so the rest of your tool can react
-      const detail = {
-        cents,
-        value: (cents/100),
-        formatted: formatCents(cents, priceInput.dataset.locale, priceInput.dataset.currency),
-        note: $("#priceNotes").value || null,
-        timestamp: new Date().toISOString()
-      };
-      window.dispatchEvent(new CustomEvent('projectPriceChanged', { detail }));
-
-      // Provide a quick visual feedback (disable briefly)
-      saveBtn.disabled = true;
-      saveBtn.textContent = "Saved";
-      setTimeout(() => {
-        saveBtn.disabled = false;
-        saveBtn.textContent = "Save Price";
-      }, 800);
-    });
-
-    // Clear
-    clearBtn.addEventListener('click', () => {
-      priceInput.value = '';
-      hiddenCents.value = 0;
-      $("#priceNotes").value = '';
-      updateSummary();
-      setError('');
-      window.dispatchEvent(new CustomEvent('projectPriceChanged', {
-        detail: { cents: 0, value: 0, formatted: formatCents(0, priceInput.dataset.locale, priceInput.dataset.currency), note: null, timestamp: new Date().toISOString() }
-      }));
-    });
-
-    // Toggle
-    handle.addEventListener('click', () => {
-      const isClosed = drawer.dataset.state === 'closed';
-      setOpen(isClosed);
-    });
-    closeBtn.addEventListener('click', () => setOpen(false));
-
-    // Initialize
-    (function init(){
-      setOpen(true);
-      updateSummary();
-
-      // Example: listen elsewhere in your app
-      // window.addEventListener('projectPriceChanged', (e)=>console.log('Price updated:', e.detail));
-    })();
-  </script>
-</body>
-</html>
-
