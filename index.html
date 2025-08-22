@@ -152,10 +152,7 @@
       <div class="kpi"><div class="val" id="kResale">$—</div><div class="note">Resale Value Recoup</div></div>
       <div class="kpi"><div class="val" id="kROI">$—</div><div class="note">Net ROI (Return − Cost + Discount)</div></div>
     </div>
-    <!-- Keep the live “explain” minimal and move details into FAQ -->
-    <div class="note" id="explain" style="margin-top:10px">
-      See <a href="#faq-calcs">FAQ: How are these numbers calculated?</a>
-    </div>
+
     <div style="display:flex;gap:10px;margin-top:12px">
       <button class="btn" id="recalcBtn" type="button">Recalculate</button>
       <button class="btn" style="background:#0b7e3b" onclick="openEmail()">Email me this estimate</button>
@@ -178,22 +175,17 @@
       <p class="note">We start with a baseline $250 monthly bill, apply a rough regional inflation rate derived from your ZIP’s first digit, and multiply by the selected package’s efficiency over the years you plan to stay.</p>
     </details>
 
-    <details><summary><strong>Does a discount change the ROI?</strong></summary>
-      <p class="note">Yes—discounts lower your out‑of‑pocket for the same value, so ROI improves. We add the discount dollars to ROI and the main “Total Return” number, but we don’t reduce savings or resale value since product performance is unchanged.</p>
-    </details>
-
-    <!-- Calculations/methodology moved here -->
     <details id="faq-calcs"><summary><strong>How are these numbers calculated?</strong></summary>
       <div class="note">
         <ul style="margin:8px 0 0 18px">
-          <li><strong>Installed Cost (value anchor)</strong> = either the automatic estimate from package &amp; upgrades (<em>per‑window price × number of windows</em>) or a <em>manual price</em> you enter in the drawer.</li>
-          <li><strong>Out‑of‑Pocket (shown under Installed Cost when manual price is set)</strong> = <em>manual price − discount</em> (never below $0). This is also shown on the drawer handle.</li>
+          <li><strong>Installed Cost (value anchor)</strong> = either the automatic estimate from package &amp; upgrades (<em>per‑window price × number of windows</em>) or a <em>manual price</em> entered in the drawer.</li>
+          <li><strong>Out‑of‑Pocket (shown under Installed Cost when manual price is set)</strong> = <em>manual price − discount</em> (never below $0). This is also summarized on the drawer handle.</li>
           <li><strong>Energy Savings</strong> = sum over each year: <em>(monthly bill × efficiency %) × 12</em>, with the bill increasing annually by your ZIP‑based inflation rate.</li>
           <li><strong>Resale Value Recoup</strong> = <em>Installed Cost × 70%</em> (realized the year you sell/move).</li>
           <li><strong>Total Return (blue blurb)</strong> = <em>Energy Savings + Resale Value + Discount</em>.</li>
-          <li><strong>Net ROI</strong> = <em>Total Return − Installed Cost</em> (equivalently <em>Energy Savings + Resale + Discount − Installed</em>).</li>
+          <li><strong>Net ROI</strong> = <em>Energy Savings + Resale + Discount − Installed Cost</em>.</li>
           <li><strong>Efficiency assumptions</strong>: Good ≈ 18%, Better ≈ 24%, Best ≈ 28%; Triple‑pane adds ≈ +2% when available.</li>
-          <li><strong>Inflation by ZIP</strong>: We use a simple heuristic from the first digit of your ZIP to set a regional energy inflation rate (~3–4%/yr).</li>
+          <li><strong>ZIP‑based inflation</strong>: simple heuristic using the first digit of your ZIP (~3–4%/yr).</li>
         </ul>
       </div>
     </details>
@@ -280,17 +272,15 @@
 
 <script>
   // ===== Debug beacon =====
-  window.__JOYCE_BUILD = 'roi+drawer v1.6 (FAQs refined; moved calc details to FAQ)';
+  window.__JOYCE_BUILD = 'roi+drawer v1.7 (auto-estimate default; discount hits all ROI; no inline FAQ hint)';
   console.log(window.__JOYCE_BUILD);
 
   // ---------- Helpers & Constants ----------
   const $ = id => document.getElementById(id);
   const money = n => '$' + Math.round(n).toLocaleString();
 
-  // ZIP → rough regional energy inflation (first digit heuristic, %/yr)
   const inflByZip1st = {'0':4.0,'1':4.0,'2':3.8,'3':3.2,'4':3.2,'5':3.0,'6':3.1,'7':3.3,'8':3.4,'9':3.6};
 
-  // Tier configuration
   const tiers = {
     good:   { label:'Good',   perWindow:1000, eff:18, glass:'J2 (Double Low‑E)',  allowUpgrades:false },
     better: { label:'Better', perWindow:1425, eff:24, glass:'J31 (Quad Low‑E + Super Spacer)', allowUpgrades:true  },
@@ -371,7 +361,7 @@
     else { el.textContent = ''; el.removeAttribute('aria-live'); }
   }
 
-  // ----- Core calculator -----
+  // ----- Core calculator (auto-estimate by default) -----
   function calc(){
     const nWindows = Math.max(1, Number($('num').value) || 1);
     const years = Number($('years').value) || 1;
@@ -392,7 +382,7 @@
     const manualCents = Number(hiddenPriceCents.value || 0);
     const installed = manualCents > 0 ? (manualCents/100) : autoInstalled;
 
-    // Discount (optional)
+    // Discount (optional) – adds to ROI/blurb; does not reduce value
     const discount = Math.max(0, Number(hiddenDiscountCents.value || 0) / 100);
     const outOfPocket = Math.max(0, (manualCents/100) - discount); // only meaningful if manual price exists
 
@@ -409,8 +399,8 @@
 
     // Totals
     const totalValue = savings + resale;
-    const totalReturnForBlurb = totalValue + discount;
-    const netROI = totalValue - installed + discount;
+    const totalReturnForBlurb = totalValue + discount; // include discount in the blue blurb
+    const netROI = totalValue - installed + discount;  // discount boosts ROI
 
     // UI
     $('kCost').textContent   = money(installed);
@@ -474,7 +464,6 @@
   $('recalcBtn').addEventListener('click', calc);
 
   // Drawer interactions
-  const priceDrawer = $('priceDrawer'); const priceHandle = $('priceTabHandle'); const closeBtn = $('closeDrawerBtn');
   priceHandle.addEventListener('click', ()=>{ setDrawerOpen(priceDrawer.dataset.state==='closed'); });
   closeBtn.addEventListener('click', ()=> setDrawerOpen(false));
 
@@ -485,43 +474,49 @@
     inputEl.value = formatCents(cents);
     setErr(errEl,''); return cents;
   }
-  const priceInput = $('priceInput'); const discountInput = $('discountInput');
-  priceInput.addEventListener('blur', ()=>{ formatOnBlur(priceInput, $('priceError')); });
-  discountInput.addEventListener('blur', ()=>{ const c = formatOnBlur(discountInput, $('discountError')); if (c!==null && c<0) setErr($('discountError'), 'Discount cannot be negative.'); });
+  priceInput.addEventListener('blur', ()=>{ formatOnBlur(priceInput, priceError); });
+  discountInput.addEventListener('blur', ()=>{ const c = formatOnBlur(discountInput, discountError); if (c!==null && c<0) setErr(discountError, 'Discount cannot be negative.'); });
 
-  $('priceForm').addEventListener('submit', (e)=>{
+  priceForm.addEventListener('submit', (e)=>{
     e.preventDefault();
     const pCents = parseMoneyToCents(priceInput.value);
     const dCents = parseMoneyToCents(discountInput.value || '0');
-    if (pCents==null){ setErr($('priceError'),'Please enter a valid number.'); return; }
-    if (dCents!=null && dCents<0){ setErr($('discountError'),'Discount cannot be negative.'); return; }
-    $('projectPriceCents').value    = String(Math.max(0, pCents));
-    $('projectDiscountCents').value = String(Math.max(0, dCents||0));
-    updatePriceSummary(); setErr($('priceError'),''); setErr($('discountError'),'');
+    if (pCents==null){ setErr(priceError,'Please enter a valid number.'); return; }
+    if (dCents!=null && dCents<0){ setErr(discountError,'Discount cannot be negative.'); return; }
+    hiddenPriceCents.value    = String(Math.max(0, pCents));
+    hiddenDiscountCents.value = String(Math.max(0, dCents||0));
+    updatePriceSummary(); setErr(priceError,''); setErr(discountError,'');
     window.dispatchEvent(new CustomEvent('projectPriceChanged',{ detail:{
-      priceCents: Number($('projectPriceCents').value),
-      discountCents: Number($('projectDiscountCents').value),
-      note: $('priceNotes').value||null, timestamp:new Date().toISOString()
+      priceCents: Number(hiddenPriceCents.value),
+      discountCents: Number(hiddenDiscountCents.value),
+      priceFormatted: formatCents(hiddenPriceCents.value),
+      discountFormatted: formatCents(hiddenDiscountCents.value),
+      note: priceNotes.value||null, timestamp:new Date().toISOString()
     }}));
-    const btn = $('savePriceBtn'); btn.disabled = true; const old = btn.textContent; btn.textContent='Saved';
-    setTimeout(()=>{ btn.disabled=false; btn.textContent=old; }, 800);
+    saveBtn.disabled = true; const old = saveBtn.textContent; saveBtn.textContent='Saved';
+    setTimeout(()=>{ saveBtn.disabled=false; saveBtn.textContent=old; }, 800);
     calc();
   });
 
-  $('clearPriceBtn').addEventListener('click', ()=>{
-    priceInput.value=''; discountInput.value=''; $('priceNotes').value='';
-    $('projectPriceCents').value=0; $('projectDiscountCents').value=0;
-    updatePriceSummary(); setErr($('priceError'),''); setErr($('discountError'),'');
-    window.dispatchEvent(new CustomEvent('projectPriceChanged',{ detail:{ priceCents:0, discountCents:0, note:null, timestamp:new Date().toISOString() }}));
+  clearBtn.addEventListener('click', ()=>{
+    priceInput.value=''; discountInput.value=''; priceNotes.value='';
+    hiddenPriceCents.value=0; hiddenDiscountCents.value=0;
+    updatePriceSummary(); setErr(priceError,''); setErr(discountError,'');
+    window.dispatchEvent(new CustomEvent('projectPriceChanged',{
+      detail:{ priceCents:0, discountCents:0, priceFormatted:formatCents(0), discountFormatted:formatCents(0), note:null, timestamp:new Date().toISOString() }
+    }));
     calc();
   });
 
-  // Init
-  applyTierRules();
-  setDrawerOpen(false);     // closed by default
-  updatePriceSummary();
-  calc();
+  // Init: ensure auto-estimate renders immediately (even with no manual price)
+  document.addEventListener('DOMContentLoaded', () => {
+    applyTierRules();
+    setDrawerOpen(false);          // drawer closed by default
+    updatePriceSummary();          // handle text
+    calc();                        // initial auto estimate
+  });
 </script>
 </body>
 </html>
+
 
