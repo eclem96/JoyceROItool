@@ -3,24 +3,19 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Joyce Window ROI – Simple (Years + Email)</title>
+<title>Joyce Window ROI – Manual Price + Discount Drawer</title>
 <style>
   :root{
-    --brand:#0C5AA6;      /* Joyce deep blue */
-    --brand-600:#0a4a88;
-    --accent:#17a34a;     /* positive green */
-    --ink:#17212b;
-    --muted:#f4f7fb;
-    --line:#e6edf5;
-    --warn:#fff6e5;
-    --warn-line:#ffe0a6;
+    --brand:#0C5AA6; --brand-600:#0a4a88; --accent:#17a34a; --ink:#17212b;
+    --muted:#f4f7fb; --line:#e6edf5; --warn:#fff6e5; --warn-line:#ffe0a6;
+    --shadow:0 10px 24px rgba(12, 90, 166, .08);
   }
   *{box-sizing:border-box}
   body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink);background:#fff}
-  .wrap{max-width:880px;margin:auto;padding:18px}
+  .wrap{max-width:880px;margin:auto;padding:18px 18px 120px}
   h1{font-size:1.35rem;margin:0 0 6px}
   .sub{margin:0 0 14px;color:#5b6774}
-  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0;box-shadow:var(--shadow)}
   label{display:block;font-size:.95rem;margin:8px 0 6px}
   input[type="number"],input[type="text"],input[type="email"]{
     width:100%;padding:10px;border:1px solid #d6dde6;border-radius:10px;font-size:1rem;background:#fff
@@ -28,34 +23,60 @@
   .row{display:flex;gap:12px}.row>*{flex:1}
   @media (max-width:720px){.row{flex-direction:column}}
   .tiers{display:flex;gap:10px;flex-wrap:wrap}
-  .pill{
-    display:flex;gap:8px;align-items:center;padding:8px 10px;border:1px solid #dfe5ee;border-radius:999px;
-    background:#f8fbff;cursor:pointer
-  }
+  .pill{display:flex;gap:8px;align-items:center;padding:8px 10px;border:1px solid #dfe5ee;border-radius:999px;background:#f8fbff;cursor:pointer}
   .opt{display:flex;align-items:center;gap:8px;margin:6px 0}
   .kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
   @media (max-width:720px){.kpis{grid-template-columns:1fr}}
   .kpi{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff}
   .kpi .val{font-weight:700;font-size:1.1rem}
   .note{font-size:.9rem;color:#5b6774}
+  .tiny{font-size:.8rem;color:#6b7280}
   .btn{background:var(--brand);color:#fff;border:0;border-radius:12px;padding:10px 14px;font-weight:600;cursor:pointer}
   .btn:hover{background:var(--brand-600)}
-  .disabled{opacity:.5;pointer-events:none}
+  .btn-ghost{background:#f8fafc;color:#0b1220;border:1px solid var(--line)}
   .lock{background:var(--warn);border:1px solid var(--warn-line);border-radius:10px;padding:8px;margin-top:6px}
-  .blurb{
-    display:flex;justify-content:space-between;align-items:center;gap:12px;
-    background:linear-gradient(90deg, #e9f2ff, #f4fff7);
-    border:1px dashed var(--brand);border-radius:14px;padding:12px
-  }
+  .blurb{display:flex;justify-content:space-between;align-items:center;gap:12px;background:linear-gradient(90deg, #e9f2ff, #f4fff7);border:1px dashed var(--brand);border-radius:14px;padding:12px}
   .blurb .big{font-size:1.35rem;font-weight:800;color:var(--accent)}
   .slider-wrap{padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--muted)}
   input[type=range]{width:100%}
   .brand{color:var(--brand);font-weight:700}
 
-  /* Modal (Email) */
-  .modal{position:fixed;inset:0;display:none;background:rgba(0,0,0,.35);align-items:center;justify-content:center;padding:20px;z-index:1000}
+  /* Bottom Manual Price Drawer */
+  .price-tab-handle{
+    position:fixed;left:50%;transform:translateX(-50%);bottom:12px;
+    background:#fff;border:1px solid var(--line);border-radius:999px;padding:10px 14px;
+    font-size:14px;display:flex;align-items:center;gap:10px;cursor:pointer;z-index:1001;box-shadow:var(--shadow)
+  }
+  .price-tab-handle .chev{
+    width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:7px solid var(--brand);
+    transition:transform .25s ease;
+  }
+  .price-tab-handle[data-state="closed"] .chev{ transform:rotate(180deg); }
+  .price-drawer{
+    position:fixed;left:50%;transform:translateX(-50%);bottom:0;
+    width:min(920px, calc(100% - 24px));background:#fff;border:1px solid var(--line);border-bottom:none;
+    border-radius:14px 14px 0 0;box-shadow:var(--shadow);z-index:1000;overflow:clip;
+    transition:max-height .28s ease;max-height:420px;
+  }
+  .price-drawer[data-state="closed"]{ max-height:0;border-width:0;box-shadow:none; }
+  .drawer-inner{ padding: 16px 16px 18px; }
+  .drawer-header{ display:flex;align-items:center;gap:10px;margin-bottom:6px }
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px rgba(23,163,74,.12)}
+  .drawer-title{ font-size:15px;font-weight:700;letter-spacing:.2px }
+  .drawer-desc{ color:#5b6774;font-size:13px;margin-bottom:12px }
+  /* 4 columns: Price | Discount | Notes | Save */
+  .field-row{ display:grid;grid-template-columns:1.05fr .75fr 1fr auto;gap:12px;align-items:end }
+  @media (max-width:780px){ .field-row{grid-template-columns:1fr 1fr} }
+  .label{ font-size:12px;color:#6b7280 }
+  .input{appearance:none;outline:none;border:1px solid #d6dde6;background:#fff;color:#0b1220;padding:12px;border-radius:12px;font-size:16px;line-height:1.2}
+  .help{ font-size:12px;color:#6b7280;margin-top:6px }
+  .error{ color:#b91c1c;font-size:12px;margin-top:6px;display:none }
+  .error[aria-live="assertive"]{ display:block }
+
+  /* Email modal */
+  .modal{position:fixed;inset:0;display:none;background:rgba(0,0,0,.35);align-items:center;justify-content:center;padding:20px;z-index:1100}
   .modal.open{display:flex}
-  .modal .sheet{background:#fff;border-radius:12px;max-width:520px;width:100%;padding:16px;border:1px solid #dfe5ee}
+  .modal .sheet{background:#fff;border-radius:12px;max-width:520px;width:100%;padding:16px;border:1px solid var(--line)}
   .sheet h4{margin:0 0 8px}
   .sheet .row{margin:8px 0}
   .sheet .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:10px}
@@ -103,10 +124,10 @@
   <div class="card">
     <div class="blurb">
       <div>
-        <div class="note">Total Return (Savings + Resale Recoup)</div>
+        <div class="note">Total Return (Savings + Resale <span class="tiny">+ Discount</span>)</div>
         <div class="big" id="totalReturn">$—</div>
       </div>
-      <div class="note">Net ROI (after cost): <strong id="netRoiInline">$—</strong></div>
+      <div class="note">Net ROI <span class="tiny">(Return − Cost + Discount)</span>: <strong id="netRoiInline">$—</strong></div>
     </div>
 
     <div class="slider-wrap" style="margin-top:10px">
@@ -121,7 +142,7 @@
       <div class="kpi"><div class="val" id="kCost">$—</div><div class="note">Estimated Installed Cost</div></div>
       <div class="kpi"><div class="val" id="kSave">$—</div><div class="note">Energy Savings (selected years)</div></div>
       <div class="kpi"><div class="val" id="kResale">$—</div><div class="note">Resale Value Recoup</div></div>
-      <div class="kpi"><div class="val" id="kROI">$—</div><div class="note">Net ROI (Return − Cost)</div></div>
+      <div class="kpi"><div class="val" id="kROI">$—</div><div class="note">Net ROI (Return − Cost + Discount)</div></div>
     </div>
     <div class="note" id="explain" style="margin-top:10px"></div>
     <div style="display:flex;gap:10px;margin-top:12px">
@@ -150,9 +171,9 @@
     </div></div>
     <div class="small" style="margin-top:6px">We generate a pre‑filled email with your current selections. If your mail app doesn’t open, use “Copy summary.”</div>
     <div class="actions">
-      <button type="button" class="btn" style="background:#f3f6fa;color:#0b1220;border:1px solid #dfe5ee" onclick="copySummary()">Copy summary</button>
+      <button type="button" class="btn btn-ghost" onclick="copySummary()">Copy summary</button>
       <button type="button" class="btn" onclick="sendEmail()">Send email</button>
-      <button type="button" class="btn" style="background:#f3f6fa;color:#0b1220;border:1px solid #dfe5ee" onclick="closeEmail()">Close</button>
+      <button type="button" class="btn btn-ghost" onclick="closeEmail()">Close</button>
     </div>
     <details style="margin-top:10px"><summary class="small">What gets sent?</summary>
       <pre class="mono" id="previewBox" style="white-space:pre-wrap;max-height:220px;overflow:auto;background:#f8fafc;border:1px solid #e8edf3;border-radius:8px;padding:8px"></pre>
@@ -160,6 +181,59 @@
     <div id="copyMsg" class="small" style="margin-top:6px"></div>
   </div>
 </div>
+
+<!-- BOTTOM DRAWER: Manual Project Price -->
+<button id="priceTabHandle" class="price-tab-handle" type="button" aria-controls="priceDrawer" aria-expanded="false" data-state="closed">
+  <span class="chev" aria-hidden="true"></span>
+  <strong>Project Price</strong>
+  <span id="priceTabSummary" class="note">$0.00</span>
+</button>
+
+<section id="priceDrawer" class="price-drawer" aria-label="Project Price Tab" data-state="closed">
+  <div class="drawer-inner">
+    <div class="drawer-header">
+      <span class="dot" aria-hidden="true"></span>
+      <div class="drawer-title">Manual Project Price</div>
+    </div>
+    <div class="drawer-desc">Reps can enter a project price and an optional discount. The calculator uses the <em>price</em> to determine value (resale &amp; savings) and adds the <em>discount</em> to ROI. The blue blurb totals include discount.</div>
+
+    <form id="priceForm" novalidate>
+      <div class="field-row">
+        <div class="field">
+          <label for="priceInput" class="label">Price (manual entry)</label>
+          <input id="priceInput" class="input" type="text" inputmode="decimal" autocomplete="off" placeholder="$0.00" aria-describedby="priceHelp priceError" data-locale="en-US" data-currency="USD"/>
+          <div id="priceHelp" class="help">Enter a number (e.g., 12000, 12,000.50, or $12,000).</div>
+          <div id="priceError" class="error" role="alert"></div>
+        </div>
+
+        <div class="field">
+          <label for="discountInput" class="label">Discount (optional)</label>
+          <input id="discountInput" class="input" type="text" inputmode="decimal" autocomplete="off" placeholder="$0.00" aria-describedby="discountHelp discountError"/>
+          <div id="discountHelp" class="help">Discount improves ROI and blue-blurb totals; it does not reduce savings or resale value.</div>
+          <div id="discountError" class="error" role="alert"></div>
+        </div>
+
+        <div class="field">
+          <label for="priceNotes" class="label">Internal note (optional)</label>
+          <input id="priceNotes" class="input" type="text" placeholder="e.g., Q4 promo applied" />
+        </div>
+
+        <div class="field" style="align-self:center;">
+          <button id="savePriceBtn" class="btn" type="submit" title="Save price">Save Price</button>
+        </div>
+      </div>
+
+      <!-- Hidden raw numeric (cents) -->
+      <input type="hidden" id="projectPriceCents" value="0" />
+      <input type="hidden" id="projectDiscountCents" value="0" />
+    </form>
+
+    <div class="row-actions" style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px">
+      <button id="clearPriceBtn" class="btn btn-ghost" type="button">Clear</button>
+      <button id="closeDrawerBtn" class="btn btn-ghost" type="button">Close</button>
+    </div>
+  </div>
+</section>
 
 <script>
   // ---------- Helpers & Constants ----------
@@ -200,24 +274,83 @@
     return pct/100;
   }
 
+  // ----- Manual Price Drawer utilities -----
+  const priceDrawer   = $('priceDrawer');
+  const priceHandle   = $('priceTabHandle');
+  const priceSummary  = $('priceTabSummary');
+  const priceInput    = $('priceInput');
+  const discountInput = $('discountInput');
+  const priceError    = $('priceError');
+  const discountError = $('discountError');
+  const priceNotes    = $('priceNotes');
+  const hiddenPriceCents    = $('projectPriceCents');
+  const hiddenDiscountCents = $('projectDiscountCents');
+  const saveBtn  = $('savePriceBtn');
+  const clearBtn = $('clearPriceBtn');
+  const closeBtn = $('closeDrawerBtn');
+  const priceForm= $('priceForm');
+
+  function parseMoneyToCents(raw){
+    if (raw == null) return null;
+    const cleaned = String(raw).trim()
+      .replace(/[^0-9.,-]/g, '')
+      .replace(/(,)(?=\d{3}\b)/g, '') // drop thousands commas
+      .replace(/(?!^)-/g,'');
+    if (!cleaned) return null;
+    let normalized = cleaned;
+    const hasComma = cleaned.includes(','), hasDot = cleaned.includes('.');
+    if (hasComma && !hasDot){ normalized = cleaned.replace(',','.'); }
+    else { normalized = cleaned.replace(/,/g,''); }
+    const num = Number(normalized);
+    if (!isFinite(num)) return null;
+    return Math.round(num * 100);
+  }
+  function formatCents(cents, locale='en-US', currency='USD'){
+    const n = (Number(cents)||0)/100;
+    try{ return new Intl.NumberFormat(locale,{style:'currency',currency}).format(n); }
+    catch{ return '$'+n.toFixed(2); }
+  }
+  function updatePriceSummary(){
+    const p = Number(hiddenPriceCents.value||0);
+    const d = Number(hiddenDiscountCents.value||0);
+    const oop = Math.max(0, (p - d));
+    priceSummary.textContent = `${formatCents(p)} − ${formatCents(d)} = ${formatCents(oop)}`;
+  }
+  function setDrawerOpen(isOpen){
+    priceDrawer.dataset.state = isOpen ? 'open' : 'closed';
+    priceHandle.dataset.state = isOpen ? 'open' : 'closed';
+    priceHandle.setAttribute('aria-expanded', String(isOpen));
+  }
+  function setErr(el, msg){
+    if (msg){ el.textContent = msg; el.setAttribute('aria-live','assertive'); }
+    else { el.textContent = ''; el.removeAttribute('aria-live'); }
+  }
+
+  // ----- Core calculator -----
   function calc(){
     const nWindows = Math.max(1, +$('num').value||1);
     const years = +$('years').value;
     $('yearsLbl').textContent = years + (years===1?' year':' years');
 
-    const tierKey = currentTier();
-    const tier = tiers[tierKey];
+    const tier = tiers[currentTier()];
 
-    // Base per-window price + permitted upgrades
+    // Base per-window price + permitted upgrades -> auto estimate
     let perWindow = tier.perWindow;
     if (tier.allowUpgrades){
       if ($('paint').checked)    perWindow += 300;
       if ($('hardware').checked) perWindow += 100;
       if ($('triple').checked)   perWindow += 100;
     }
-    const installed = perWindow * nWindows;
+    const autoInstalled = perWindow * nWindows;
 
-    // Efficiency
+    // Manual price (if provided) – used for value (savings/resale), NOT reduced by discount
+    const manualCents = Number(hiddenPriceCents.value||0);
+    const installed = manualCents > 0 ? (manualCents/100) : autoInstalled;
+
+    // Discount (improves ROI and blue-blurb totals)
+    const discount = Math.max(0, Number(hiddenDiscountCents.value||0)/100);
+
+    // Efficiency (triple-pane adds +2 if allowed and checked)
     let effPct = tier.eff + ((tier.allowUpgrades && $('triple').checked) ? 2 : 0);
     const eff = effPct/100;
 
@@ -227,85 +360,131 @@
     // Energy savings across chosen years (bill inflates each year)
     let bill = AVG_BILL, savings = 0;
     for (let y=1; y<=years; y++){
-      savings += bill * eff * 12; // year's savings
+      savings += bill * eff * 12;
       bill *= (1 + infl);
     }
 
     // Resale recoup realized when they sell/move at selected year
     const resale = installed * RECOUP;
 
-    // Totals
-    const totalReturn = savings + resale;           // what they "get back" before cost
-    const netROI = totalReturn - installed;         // benefit net of cost
+    // Totals – discount does NOT reduce value, it ADDS to ROI and blue blurb totals
+    const totalValue = savings + resale;
+    const totalReturnForBlurb = totalValue + discount; // ← shows discount in blue blurb
+    const netROI = totalValue - installed + discount;
 
     // Output
-    $('kCost').textContent = money(installed);
-    $('kSave').textContent = money(savings);
+    $('kCost').textContent   = money(installed);
+    $('kSave').textContent   = money(savings);
     $('kResale').textContent = money(resale);
-    $('kROI').textContent = (netROI>=0?'+':'') + money(netROI);
+    $('kROI').textContent    = (netROI>=0?'+':'') + money(netROI);
 
-    $('totalReturn').textContent = money(totalReturn);
-    $('netRoiInline').textContent = (netROI>=0?'+':'') + money(netROI);
+    $('totalReturn').textContent = money(totalReturnForBlurb);
+    $('netRoiInline').textContent= (netROI>=0?'+':'') + money(netROI);
 
     $('explain').innerHTML =
-      `Includes ${Math.round(RECOUP*100)}% resale value at <strong>year ${years}</strong> + cumulative energy savings with ` +
+      `Includes ${Math.round(RECOUP*100)}% resale at <strong>year ${years}</strong> + cumulative energy savings with ` +
       `regional energy inflation of <strong>${(infl*100).toFixed(1)}%/yr</strong>, assuming <strong>${effPct}%</strong> efficiency for ` +
-      `<strong>${tier.label}</strong> (${tier.glass}).`;
+      `<strong>${tier.label}</strong> (${tier.glass}). <span class="tiny">(Discount adds to ROI &amp; blurb totals; it does not reduce savings or resale.)</span>`;
 
     // Update email preview if modal is open
-    if (document.getElementById('emailModal').classList.contains('open')) updatePreview();
+    if ($('emailModal').classList.contains('open')) updatePreview();
   }
 
-  // --- Email modal helpers ---
-  function openEmail(){ document.getElementById('emailModal').classList.add('open'); updatePreview(); }
-  function closeEmail(){ document.getElementById('emailModal').classList.remove('open'); }
+  // ----- Email modal helpers -----
+  function openEmail(){ $('emailModal').classList.add('open'); updatePreview(); }
+  function closeEmail(){ $('emailModal').classList.remove('open'); }
   function buildSummary(){
-    const tierKey = currentTier(); const t = tiers[tierKey];
+    const t = tiers[currentTier()];
     const years = +$('years').value;
-    const totalReturn = $('totalReturn').textContent;
-    const netInline = $('netRoiInline').textContent;
+    const pC = Number(hiddenPriceCents.value||0), dC = Number(hiddenDiscountCents.value||0);
     return [
       `Joyce Window ROI Estimate`,
       `Package: ${t.label} (${t.glass})`,
       `ZIP: ${$('zip').value.trim()||'—'}`,
-      `Windows: ${$('num').value} | Upgrades: ${
-        ['paint','hardware','triple'].filter(id=>$(id).checked).join(', ')||'None'
-      }`,
-      `Total Return at ${years} years (Savings + Resale): ${totalReturn}`,
-      `Net ROI (after cost): ${netInline}`,
-      ``,
-      `Breakdown`,
+      `Windows: ${$('num').value} | Upgrades: ${['paint','hardware','triple'].filter(id=>$(id).checked).join(', ') || 'None'}`,
       `Installed cost: ${$('kCost').textContent}`,
+      `Discount: ${formatCents(dC)}`,
       `Energy savings (${years} yr): ${$('kSave').textContent}`,
-      `Resale recoup: ${$('kResale').textContent}`
+      `Resale recoup: ${$('kResale').textContent}`,
+      `Total Return (Savings + Resale + Discount): ${$('totalReturn').textContent}`,
+      `Net ROI (Return − Cost + Discount): ${$('netRoiInline').textContent}`,
+      '',
+      `Rep note: ${$('priceNotes').value || '—'}`
     ].join('\n');
   }
   function updatePreview(){ $('previewBox').textContent = buildSummary(); }
   function copySummary(){
     const txt = buildSummary();
-    navigator.clipboard.writeText(txt).then(()=>{ document.getElementById('copyMsg').textContent='Summary copied to clipboard.'; });
+    navigator.clipboard.writeText(txt).then(()=>{ $('copyMsg').textContent='Summary copied to clipboard.'; });
   }
   function sendEmail(){
-    const name = document.getElementById('leadName').value.trim();
-    const email = document.getElementById('leadEmail').value.trim();
+    const name = $('leadName').value.trim();
+    const email = $('leadEmail').value.trim();
     const subject = encodeURIComponent('My Joyce Window ROI Estimate');
     const body = encodeURIComponent((name?`Name: ${name}\n`:'') + (email?`Email: ${email}\n`:'') + '\n' + buildSummary());
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   }
 
-  // Wire events
+  // ----- Events wiring -----
   document.addEventListener('change', e=>{
     if (e.target.name==='tier'){ applyTierRules(); }
     calc();
   });
   document.addEventListener('input', e=>{
-    if (['num','zip','paint','hardware','triple','years','leadName','leadEmail'].includes(e.target.id)) {
-      calc();
-    }
+    if (['num','zip','paint','hardware','triple','years','leadName','leadEmail'].includes(e.target.id)) calc();
   });
 
-  // Init
-  applyTierRules(); calc();
+  // Drawer interactions
+  priceHandle.addEventListener('click', ()=>{ setDrawerOpen(priceDrawer.dataset.state==='closed'); });
+  closeBtn.addEventListener('click', ()=> setDrawerOpen(false));
+
+  function formatOnBlur(inputEl, errEl){
+    const cents = parseMoneyToCents(inputEl.value);
+    if (inputEl.value.trim()===''){ setErr(errEl,''); return null; }
+    if (cents==null){ setErr(errEl,'Please enter a valid number.'); return null; }
+    inputEl.value = formatCents(cents);
+    setErr(errEl,'');
+    return cents;
+  }
+
+  priceInput.addEventListener('blur', ()=>{ formatOnBlur(priceInput, priceError); });
+  discountInput.addEventListener('blur', ()=>{ const c = formatOnBlur(discountInput, discountError); if (c!==null && c<0) setErr(discountError, 'Discount cannot be negative.'); });
+
+  priceForm.addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const pCents = parseMoneyToCents(priceInput.value);
+    const dCents = parseMoneyToCents(discountInput.value || '0');
+    if (pCents==null){ setErr(priceError,'Please enter a valid number.'); return; }
+    if (dCents!=null && dCents<0){ setErr(discountError,'Discount cannot be negative.'); return; }
+    hiddenPriceCents.value    = String(Math.max(0, pCents));
+    hiddenDiscountCents.value = String(Math.max(0, dCents||0));
+    updatePriceSummary(); setErr(priceError,''); setErr(discountError,'');
+    const detail = {
+      priceCents: Number(hiddenPriceCents.value),
+      discountCents: Number(hiddenDiscountCents.value),
+      priceFormatted: formatCents(hiddenPriceCents.value),
+      discountFormatted: formatCents(hiddenDiscountCents.value),
+      note: priceNotes.value||null, timestamp:new Date().toISOString()
+    };
+    window.dispatchEvent(new CustomEvent('projectPriceChanged',{ detail }));
+    saveBtn.disabled = true; const old = saveBtn.textContent; saveBtn.textContent='Saved';
+    setTimeout(()=>{ saveBtn.disabled=false; saveBtn.textContent=old; }, 800);
+    calc();
+  });
+
+  clearBtn.addEventListener('click', ()=>{
+    priceInput.value=''; discountInput.value=''; priceNotes.value='';
+    hiddenPriceCents.value=0; hiddenDiscountCents.value=0;
+    updatePriceSummary(); setErr(priceError,''); setErr(discountError,'');
+    window.dispatchEvent(new CustomEvent('projectPriceChanged',{ detail:{ priceCents:0, discountCents:0, priceFormatted:formatCents(0), discountFormatted:formatCents(0), note:null, timestamp:new Date().toISOString() }}));
+    calc();
+  });
+
+  // Init (drawer closed by default)
+  applyTierRules();
+  setDrawerOpen(false);
+  updatePriceSummary();
+  calc();
 </script>
 </body>
 </html>
