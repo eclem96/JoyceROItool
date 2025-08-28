@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Joyce Window ROI – Manual Price + Discount Drawer</title>
+<title>Joyce Window ROI – Manual Price + Discount + Bill</title>
 <style>
   :root{
     --brand:#0C5AA6; --brand-600:#0a4a88; --accent:#17a34a; --ink:#17212b;
@@ -13,8 +13,10 @@
   *{box-sizing:border-box}
   body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink);background:#fff}
   .wrap{max-width:880px;margin:auto;padding:18px 18px 120px}
+
   h1{font-size:1.35rem;margin:0 0 6px}
   .sub{margin:0 0 14px;color:#5b6774}
+
   .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0;box-shadow:var(--shadow)}
   label{display:block;font-size:.95rem;margin:8px 0 6px}
   input[type="number"],input[type="text"],input[type="email"]{
@@ -22,26 +24,37 @@
   }
   .row{display:flex;gap:12px}.row>*{flex:1}
   @media (max-width:720px){.row{flex-direction:column}}
+
   .tiers{display:flex;gap:10px;flex-wrap:wrap}
   .pill{display:flex;gap:8px;align-items:center;padding:8px 10px;border:1px solid #dfe5ee;border-radius:999px;background:#f8fbff;cursor:pointer}
+
   .opt{display:flex;align-items:center;gap:8px;margin:6px 0}
+  .note{font-size:.9rem;color:#5b6774}
+  .tiny{font-size:.8rem;color:#6b7280}
+
   .kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
   @media (max-width:720px){.kpis{grid-template-columns:1fr}}
   .kpi{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff}
   .kpi .val{font-weight:700;font-size:1.1rem}
-  .note{font-size:.9rem;color:#5b6774}
-  .tiny{font-size:.8rem;color:#6b7280}
+
   .btn{background:var(--brand);color:#fff;border:0;border-radius:12px;padding:10px 14px;font-weight:600;cursor:pointer}
   .btn:hover{background:var(--brand-600)}
   .btn-ghost{background:#f8fafc;color:#0b1220;border:1px solid var(--line)}
+
   .lock{background:var(--warn);border:1px solid var(--warn-line);border-radius:10px;padding:8px;margin-top:6px}
-  .blurb{display:flex;justify-content:space-between;align-items:center;gap:12px;background:linear-gradient(90deg, #e9f2ff, #f4fff7);border:1px dashed var(--brand);border-radius:14px;padding:12px}
+
+  .blurb{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+    background:linear-gradient(90deg, #e9f2ff, #f4fff7);
+    border:1px dashed var(--brand);border-radius:14px;padding:12px
+  }
   .blurb .big{font-size:1.35rem;font-weight:800;color:var(--accent)}
-  .slider-wrap{padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--muted)}
+
+  .slider-wrap{padding:10px;border:1px solid var(--line);border-radius:12px;background:#f4f7fb}
   input[type=range]{width:100%}
   .brand{color:var(--brand);font-weight:700}
 
-  /* Bottom Manual Price Drawer */
+  /* --- Bottom Manual Price Drawer --- */
   .price-tab-handle{
     position:fixed;left:50%;transform:translateX(-50%);bottom:12px;
     background:#fff;border:1px solid var(--line);border-radius:999px;padding:10px 14px;
@@ -52,6 +65,7 @@
     transition:transform .25s ease;
   }
   .price-tab-handle[data-state="closed"] .chev{ transform:rotate(180deg); }
+
   .price-drawer{
     position:fixed;left:50%;transform:translateX(-50%);bottom:0;
     width:min(920px, calc(100% - 24px));background:#fff;border:1px solid var(--line);border-bottom:none;
@@ -59,30 +73,29 @@
     transition:max-height .28s ease;max-height:420px;
   }
   .price-drawer[data-state="closed"]{ max-height:0;border-width:0;box-shadow:none; }
+
   .drawer-inner{ padding: 16px 16px 18px; }
   .drawer-header{ display:flex;align-items:center;gap:10px;margin-bottom:6px }
   .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px rgba(23,163,74,.12)}
   .drawer-title{ font-size:15px;font-weight:700;letter-spacing:.2px }
-  .drawer-desc{ color:#5b6774;font-size:13px;margin-bottom:12px }
-  /* 4 columns: Price | Discount | Notes | Save */
-  .field-row{ display:grid;grid-template-columns:1.05fr .75fr 1fr auto;gap:12px;align-items:end }
-  @media (max-width:780px){ .field-row{grid-template-columns:1fr 1fr} }
+
+  /* Fields row: Price | Discount | Energy Bill | Save */
+  .field-row{
+    display:grid;
+    grid-template-columns:1.05fr .85fr .9fr auto;
+    gap:12px; align-items:end
+  }
+  @media (max-width:820px){ .field-row{grid-template-columns:1fr 1fr} }
   @media (max-width:560px){ .field-row{grid-template-columns:1fr} }
+
   .label{ font-size:12px;color:#6b7280 }
   .input{appearance:none;outline:none;border:1px solid #d6dde6;background:#fff;color:#0b1220;padding:12px;border-radius:12px;font-size:16px;line-height:1.2}
   .help{ font-size:12px;color:#6b6774;margin-top:6px }
   .error{ color:#b91c1c;font-size:12px;margin-top:6px;display:none }
   .error[aria-live="assertive"]{ display:block }
 
-  /* Email modal */
-  .modal{position:fixed;inset:0;display:none;background:rgba(0,0,0,.35);align-items:center;justify-content:center;padding:20px;z-index:1100}
-  .modal.open{display:flex}
-  .modal .sheet{background:#fff;border-radius:12px;max-width:520px;width:100%;padding:16px;border:1px solid var(--line)}
-  .sheet h4{margin:0 0 8px}
-  .sheet .row{margin:8px 0}
-  .sheet .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:10px}
-  .small{font-size:.82rem;color:#5b6670}
-  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:.85rem}
+  /* FAQ details spacing */
+  details{margin:8px 0}
 </style>
 </head>
 <body>
@@ -114,10 +127,10 @@
     <div id="upgrades">
       <div class="opt"><input type="checkbox" id="paint"><label for="paint" style="margin:0">Painted Exterior (+$300)</label></div>
       <div class="opt"><input type="checkbox" id="hardware"><label for="hardware" style="margin:0">Hardware Upgrade (+$100)</label></div>
-      <div class="opt"><input type="checkbox" id="triple"><label for="triple" style="margin:0">Triple‑Pane Glass (+$100)</label></div>
+      <div class="opt"><input type="checkbox" id="triple"><label for="triple" style="margin:0">Triple-Pane Glass (+$100)</label></div>
     </div>
     <div id="goodLock" class="lock" style="display:none">
-      The <strong>Good</strong> package is as‑is: no upgrades (price varies only by size and type). This keeps “Good” the most economical option.
+      The <strong>Good</strong> package is as-is: no upgrades (price varies only by size and type). This keeps “Good” the most economical option.
     </div>
   </div>
 
@@ -125,10 +138,10 @@
   <div class="card">
     <div class="blurb">
       <div>
-        <div class="note">Total Return (Savings + Resale <span class="tiny">+ Discount</span>)</div>
+        <div class="note">Total Return</div>
         <div class="big" id="totalReturn">$—</div>
       </div>
-      <div class="note">Net ROI <span class="tiny">(Return − Cost + Discount)</span>: <strong id="netRoiInline">$—</strong></div>
+      <div class="note">Net ROI: <strong id="netRoiInline">$—</strong></div>
     </div>
 
     <div class="slider-wrap" style="margin-top:10px">
@@ -143,14 +156,14 @@
       <div class="kpi">
         <div class="val" id="kCost">$—</div>
         <div class="note">Estimated Installed Cost</div>
-        <!-- shows only when a manual price is set -->
+        <!-- only when manual price is set -->
         <div id="oopLine" class="tiny" style="display:none;margin-top:6px">
           Estimated Installed Cost <em>after discounts</em>: <strong id="oopVal">$0</strong>
         </div>
       </div>
-      <div class="kpi"><div class="val" id="kSave">$—</div><div class="note">Energy Savings (selected years)</div></div>
+      <div class="kpi"><div class="val" id="kSave">$—</div><div class="note">Energy Savings</div></div>
       <div class="kpi"><div class="val" id="kResale">$—</div><div class="note">Resale Value Recoup</div></div>
-      <div class="kpi"><div class="val" id="kROI">$—</div><div class="note">Net ROI (Return − Cost + Discount)</div></div>
+      <div class="kpi"><div class="val" id="kROI">$—</div><div class="note">Net ROI</div></div>
     </div>
 
     <div style="display:flex;gap:10px;margin-top:12px">
@@ -159,35 +172,20 @@
     </div>
   </div>
 
-  <!-- FAQ -->
+  <!-- FAQs -->
   <div class="card" aria-labelledby="faqTitle">
     <h2 id="faqTitle" style="font-size:1.05rem;margin:0 0 8px">ROI Estimator FAQs</h2>
-
     <details><summary><strong>How accurate is this estimate?</strong></summary>
       <p class="note">It’s a directional ROI model based on your selections and typical conditions. Final pricing depends on window size, style, installation conditions, and any structural work.</p>
     </details>
-
     <details><summary><strong>Where does the resale value % come from?</strong></summary>
-      <p class="note">We use a ~70% recoup assumption informed by national cost‑vs‑value trends for window projects. It is a planning guide—your local market may vary.</p>
+      <p class="note">We use a ~70% recoup assumption informed by national cost-vs-value trends for window projects. It is a planning guide—your local market may vary.</p>
     </details>
-
     <details><summary><strong>How is energy savings calculated?</strong></summary>
-      <p class="note">We start with a baseline $250 monthly bill, apply a rough regional inflation rate derived from your ZIP’s first digit, and multiply by the selected package’s efficiency over the years you plan to stay.</p>
+      <p class="note">We start with a baseline $250 monthly bill (editable in the drawer), apply a rough regional inflation rate derived from your ZIP’s first digit, and multiply by the selected package’s efficiency over the years you plan to stay.</p>
     </details>
-
-    <details id="faq-calcs"><summary><strong>How are these numbers calculated?</strong></summary>
-      <div class="note">
-        <ul style="margin:8px 0 0 18px">
-          <li><strong>Installed Cost (value anchor)</strong> = either the automatic estimate from package &amp; upgrades (<em>per‑window price × number of windows</em>) or a <em>manual price</em> entered in the drawer.</li>
-          <li><strong>Out‑of‑Pocket (shown under Installed Cost when manual price is set)</strong> = <em>manual price − discount</em> (never below $0). This is also summarized on the drawer handle.</li>
-          <li><strong>Energy Savings</strong> = sum over each year: <em>(monthly bill × efficiency %) × 12</em>, with the bill increasing annually by your ZIP‑based inflation rate.</li>
-          <li><strong>Resale Value Recoup</strong> = <em>Installed Cost × 70%</em> (realized the year you sell/move).</li>
-          <li><strong>Total Return (blue blurb)</strong> = <em>Energy Savings + Resale Value + Discount</em>.</li>
-          <li><strong>Net ROI</strong> = <em>Energy Savings + Resale + Discount − Installed Cost</em>.</li>
-          <li><strong>Efficiency assumptions</strong>: Good ≈ 18%, Better ≈ 24%, Best ≈ 28%; Triple‑pane adds ≈ +2% when available.</li>
-          <li><strong>ZIP‑based inflation</strong>: simple heuristic using the first digit of your ZIP (~3–4%/yr).</li>
-        </ul>
-      </div>
+    <details><summary><strong>How is ROI calculated?</strong></summary>
+      <p class="note"><strong>ROI = Energy Savings + Resale Value − Installed Cost + Discount.</strong> Discounts reduce out-of-pocket for the same product value, so ROI increases; they don’t reduce Savings or Resale.</p>
     </details>
   </div>
 </div>
@@ -204,8 +202,8 @@
       <label>Your Email</label>
       <input type="email" id="leadEmail" placeholder="you@example.com">
     </div></div>
-    <div class="small" style="margin-top:6px">We generate a pre‑filled email with your current selections. If your mail app doesn’t open, use “Copy summary.”</div>
-    <div class="actions">
+    <div class="small" style="margin-top:6px">We generate a pre-filled email with your current selections. If your mail app doesn’t open, use “Copy summary.”</div>
+    <div class="actions" style="display:flex;gap:10px;justify-content:flex-end;margin-top:10px">
       <button type="button" class="btn btn-ghost" onclick="copySummary()">Copy summary</button>
       <button type="button" class="btn" onclick="sendEmail()">Send email</button>
       <button type="button" class="btn btn-ghost" onclick="closeEmail()">Close</button>
@@ -230,35 +228,33 @@
       <span class="dot" aria-hidden="true"></span>
       <div class="drawer-title">Manual Project Price</div>
     </div>
-    <div class="drawer-desc">Enter a project price and an optional discount. The <em>price</em> anchors value (resale &amp; savings). The <em>discount</em> boosts ROI and is included in the blue‑blurb totals.</div>
 
     <form id="priceForm" novalidate>
       <div class="field-row">
         <div class="field">
           <label for="priceInput" class="label">Price (manual entry)</label>
-          <input id="priceInput" class="input" type="text" inputmode="decimal" autocomplete="off" placeholder="$0.00" aria-describedby="priceHelp priceError" />
-          <div id="priceHelp" class="help">Enter a number (e.g., 12000, 12,000.50, or $12,000).</div>
+          <input id="priceInput" class="input" type="text" inputmode="decimal" autocomplete="off" placeholder="$0.00" aria-describedby="priceError" />
           <div id="priceError" class="error" role="alert"></div>
         </div>
 
         <div class="field">
           <label for="discountInput" class="label">Discount (optional)</label>
-          <input id="discountInput" class="input" type="text" inputmode="decimal" autocomplete="off" placeholder="$0.00" aria-describedby="discountHelp discountError" />
-          <div id="discountHelp" class="help">Discount improves ROI and blurb totals; it does not reduce savings or resale.</div>
+          <input id="discountInput" class="input" type="text" inputmode="decimal" autocomplete="off" placeholder="$0.00" aria-describedby="discountError" />
           <div id="discountError" class="error" role="alert"></div>
         </div>
 
         <div class="field">
-          <label for="priceNotes" class="label">Internal note (optional)</label>
-          <input id="priceNotes" class="input" type="text" placeholder="e.g., Q4 promo applied" />
+          <label for="billInput" class="label">Energy Bill ($/mo)</label>
+          <input id="billInput" class="input" type="text" inputmode="decimal" autocomplete="off" placeholder="250" aria-describedby="billError" />
+          <div id="billError" class="error" role="alert"></div>
         </div>
 
         <div class="field" style="align-self:center;">
-          <button id="savePriceBtn" class="btn" type="submit" title="Save price">Save Price</button>
+          <button id="savePriceBtn" class="btn" type="submit" title="Save">Save</button>
         </div>
       </div>
 
-      <!-- Hidden raw numeric (cents) -->
+      <!-- Hidden raw numeric (cents) for price/discount -->
       <input type="hidden" id="projectPriceCents" value="0" />
       <input type="hidden" id="projectDiscountCents" value="0" />
     </form>
@@ -272,23 +268,25 @@
 
 <script>
   // ===== Debug beacon =====
-  window.__JOYCE_BUILD = 'roi+drawer v1.7 (auto-estimate default; discount hits all ROI; no inline FAQ hint)';
+  window.__JOYCE_BUILD = 'roi+drawer v1.9 (aligned fields; removed notes; added bill input)';
   console.log(window.__JOYCE_BUILD);
 
   // ---------- Helpers & Constants ----------
   const $ = id => document.getElementById(id);
   const money = n => '$' + Math.round(n).toLocaleString();
 
+  // ZIP → rough regional energy inflation (first digit heuristic, %/yr)
   const inflByZip1st = {'0':4.0,'1':4.0,'2':3.8,'3':3.2,'4':3.2,'5':3.0,'6':3.1,'7':3.3,'8':3.4,'9':3.6};
 
+  // Tier configuration
   const tiers = {
-    good:   { label:'Good',   perWindow:1000, eff:18, glass:'J2 (Double Low‑E)',  allowUpgrades:false },
-    better: { label:'Better', perWindow:1425, eff:24, glass:'J31 (Quad Low‑E + Super Spacer)', allowUpgrades:true  },
-    best:   { label:'Best',   perWindow:1650, eff:28, glass:'J31 (Quad Low‑E + Super Spacer)', allowUpgrades:true  }
+    good:   { label:'Good',   perWindow:1000, eff:18, allowUpgrades:false },
+    better: { label:'Better', perWindow:1425, eff:24, allowUpgrades:true  },
+    best:   { label:'Best',   perWindow:1650, eff:28, allowUpgrades:true  }
   };
 
-  const RECOUP = 0.70;
-  const AVG_BILL = 250;
+  const RECOUP = 0.70;   // resale recoup fraction
+  const DEFAULT_BILL = 250;  // baseline monthly bill
 
   function currentTier(){ return document.querySelector('input[name="tier"]:checked').value; }
 
@@ -306,25 +304,34 @@
   function inflationFromZip(zip){
     const firstDigit = (zip.match(/\d/)||[])[0];
     const pct = inflByZip1st[firstDigit] ?? 3.2;
-    $('zipNote').textContent = `Regional energy inflation set to ${pct.toFixed(1)}%/yr`;
+    $('zipNote').textContent = `Regional energy inflation ${pct.toFixed(1)}%/yr`;
     return pct/100;
   }
 
-  // ----- Manual Price Drawer utilities -----
+  // ----- Drawer state / helpers -----
   const priceDrawer   = $('priceDrawer');
   const priceHandle   = $('priceTabHandle');
   const priceSummary  = $('priceTabSummary');
   const priceInput    = $('priceInput');
   const discountInput = $('discountInput');
+  const billInput     = $('billInput');
   const priceError    = $('priceError');
   const discountError = $('discountError');
-  const priceNotes    = $('priceNotes');
+  const billError     = $('billError');
   const hiddenPriceCents    = $('projectPriceCents');
   const hiddenDiscountCents = $('projectDiscountCents');
   const saveBtn  = $('savePriceBtn');
-  const clearBtn = $('clearPriceBtn');
-  const closeBtn = $('closeDrawerBtn');
-  const priceForm= $('priceForm');
+
+  function setDrawerOpen(isOpen){
+    priceDrawer.dataset.state = isOpen ? 'open' : 'closed';
+    priceHandle.dataset.state = isOpen ? 'open' : 'closed';
+    priceHandle.setAttribute('aria-expanded', String(isOpen));
+  }
+  priceHandle.addEventListener('click', ()=>{
+    const willOpen = priceDrawer.dataset.state === 'closed';
+    setDrawerOpen(willOpen);
+  });
+  $('closeDrawerBtn').addEventListener('click', ()=> setDrawerOpen(false));
 
   function parseMoneyToCents(raw){
     if (raw == null) return null;
@@ -333,33 +340,85 @@
       .replace(/(,)(?=\d{3}\b)/g, '')
       .replace(/(?!^)-/g,'');
     if (!cleaned) return null;
-    let normalized = cleaned;
     const hasComma = cleaned.includes(','), hasDot = cleaned.includes('.');
-    normalized = (hasComma && !hasDot) ? cleaned.replace(',','.') : cleaned.replace(/,/g,'');
+    const normalized = (hasComma && !hasDot) ? cleaned.replace(',','.') : cleaned.replace(/,/g,'');
     const num = Number(normalized);
     if (!isFinite(num)) return null;
     return Math.round(num * 100);
+  }
+  function parseNumber(raw){
+    if (raw == null) return null;
+    const cleaned = String(raw).trim().replace(/[^0-9.-]/g,'');
+    if (!cleaned) return null;
+    const num = Number(cleaned);
+    return isFinite(num) ? num : null;
   }
   function formatCents(cents, locale='en-US', currency='USD'){
     const n = (Number(cents)||0)/100;
     try{ return new Intl.NumberFormat(locale,{style:'currency',currency}).format(n); }
     catch{ return '$'+n.toFixed(2); }
   }
-  function updatePriceSummary(){
-    const p = Number(hiddenPriceCents.value||0);
-    const d = Number(hiddenDiscountCents.value||0);
-    const oop = Math.max(0, (p - d));
-    priceSummary.textContent = `${formatCents(p)} − ${formatCents(d)} = ${formatCents(oop)}`;
-  }
-  function setDrawerOpen(isOpen){
-    priceDrawer.dataset.state = isOpen ? 'open' : 'closed';
-    priceHandle.dataset.state = isOpen ? 'open' : 'closed';
-    priceHandle.setAttribute('aria-expanded', String(isOpen));
-  }
   function setErr(el, msg){
     if (msg){ el.textContent = msg; el.setAttribute('aria-live','assertive'); }
     else { el.textContent = ''; el.removeAttribute('aria-live'); }
   }
+  function updatePriceSummary(){
+    const p = Number(hiddenPriceCents.value||0);
+    const d = Number(hiddenDiscountCents.value||0);
+    const oop = Math.max(0, p - d);
+    priceSummary.textContent = `${formatCents(p)} − ${formatCents(d)} = ${formatCents(oop)}`;
+  }
+
+  // Pretty-up on blur (optional; price/discount as currency, bill as plain number)
+  priceInput.addEventListener('blur', ()=>{
+    const cents = parseMoneyToCents(priceInput.value);
+    if (priceInput.value.trim()===''){ setErr(priceError,''); return; }
+    if (cents==null){ setErr(priceError,'Please enter a valid number.'); return; }
+    priceInput.value = formatCents(cents);
+    setErr(priceError,'');
+  });
+  discountInput.addEventListener('blur', ()=>{
+    const cents = parseMoneyToCents(discountInput.value);
+    if (discountInput.value.trim()===''){ setErr(discountError,''); return; }
+    if (cents==null){ setErr(discountError,'Please enter a valid number.'); return; }
+    discountInput.value = formatCents(cents);
+    setErr(discountError,'');
+  });
+  billInput.addEventListener('blur', ()=>{
+    const num = parseNumber(billInput.value);
+    if (billInput.value.trim()===''){ setErr(billError,''); return; }
+    if (num==null || num<0){ setErr(billError,'Enter a valid monthly bill.'); return; }
+    billInput.value = String(Math.round(num)); // keep it simple (whole dollars)
+    setErr(billError,'');
+  });
+
+  $('priceForm').addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const pCents = parseMoneyToCents(priceInput.value);
+    const dCents = parseMoneyToCents(discountInput.value || '0');
+    const bill   = parseNumber(billInput.value || '') ?? DEFAULT_BILL;
+
+    if (pCents==null){ setErr(priceError,'Please enter a valid number.'); return; }
+    if (dCents!=null && dCents<0){ setErr(discountError,'Discount cannot be negative.'); return; }
+    if (bill<0){ setErr(billError,'Enter a valid monthly bill.'); return; }
+
+    hiddenPriceCents.value    = String(Math.max(0, pCents));
+    hiddenDiscountCents.value = String(Math.max(0, dCents||0));
+    updatePriceSummary(); setErr(priceError,''); setErr(discountError,''); setErr(billError,'');
+
+    // quick feedback
+    saveBtn.disabled = true; const old = saveBtn.textContent; saveBtn.textContent='Saved';
+    setTimeout(()=>{ saveBtn.disabled=false; saveBtn.textContent=old; }, 800);
+
+    calc();
+  });
+
+  $('clearPriceBtn').addEventListener('click', ()=>{
+    priceInput.value=''; discountInput.value=''; billInput.value='';
+    hiddenPriceCents.value=0; hiddenDiscountCents.value=0;
+    updatePriceSummary(); setErr(priceError,''); setErr(discountError,''); setErr(billError,'');
+    calc();
+  });
 
   // ----- Core calculator (auto-estimate by default) -----
   function calc(){
@@ -369,7 +428,7 @@
 
     const tier = tiers[currentTier()];
 
-    // Auto estimate from tier + upgrades
+    // Base per-window + permitted upgrades
     let perWindow = tier.perWindow;
     if (tier.allowUpgrades){
       if ($('paint').checked)    perWindow += 300;
@@ -380,72 +439,69 @@
 
     // Manual price (optional)
     const manualCents = Number(hiddenPriceCents.value || 0);
+    const discountCents = Number(hiddenDiscountCents.value || 0);
     const installed = manualCents > 0 ? (manualCents/100) : autoInstalled;
+    const discount = Math.max(0, discountCents / 100);
 
-    // Discount (optional) – adds to ROI/blurb; does not reduce value
-    const discount = Math.max(0, Number(hiddenDiscountCents.value || 0) / 100);
-    const outOfPocket = Math.max(0, (manualCents/100) - discount); // only meaningful if manual price exists
+    // Energy bill (override if provided)
+    const billOverride = parseNumber(billInput.value || '');
+    const monthlyBill = (billOverride!=null && billOverride>0) ? billOverride : DEFAULT_BILL;
 
     // Efficiency / inflation / savings
     const effPct = tier.eff + ((tier.allowUpgrades && $('triple').checked) ? 2 : 0);
     const eff = effPct/100;
     const infl = inflationFromZip($('zip').value.trim());
 
-    let bill = AVG_BILL, savings = 0;
+    let bill = monthlyBill, savings = 0;
     for (let y=1; y<=years; y++){ savings += bill * eff * 12; bill *= (1 + infl); }
 
     // Resale based on installed (pre-discount)
     const resale = installed * RECOUP;
 
-    // Totals
+    // Totals (discount improves ROI & blurb totals)
     const totalValue = savings + resale;
-    const totalReturnForBlurb = totalValue + discount; // include discount in the blue blurb
-    const netROI = totalValue - installed + discount;  // discount boosts ROI
+    const totalReturn = totalValue + discount;
+    const netROI = totalValue - installed + discount;
 
-    // UI
+    // Output
     $('kCost').textContent   = money(installed);
     $('kSave').textContent   = money(savings);
     $('kResale').textContent = money(resale);
     $('kROI').textContent    = (netROI>=0?'+':'') + money(netROI);
 
-    $('totalReturn').textContent = money(totalReturnForBlurb);
+    $('totalReturn').textContent = money(totalReturn);
     $('netRoiInline').textContent= (netROI>=0?'+':'') + money(netROI);
 
-    // Show/hide the “after discounts” blurb only when a manual price is set
+    // Show “after discounts” line only when a manual price is set
     if (manualCents > 0){
+      const outOfPocket = Math.max(0, manualCents/100 - discount);
       $('oopVal').textContent = money(outOfPocket);
       $('oopLine').style.display = 'block';
     } else {
       $('oopLine').style.display = 'none';
     }
-
-    if ($('emailModal').classList.contains('open')) updatePreview();
   }
 
   // ----- Email modal -----
   function openEmail(){ $('emailModal').classList.add('open'); updatePreview(); }
   function closeEmail(){ $('emailModal').classList.remove('open'); }
   function buildSummary(){
-    const t = tiers[currentTier()];
     const years = Number($('years').value)||1;
     const dC = Number(hiddenDiscountCents.value||0);
     return [
       `Joyce Window ROI Estimate`,
-      `Package: ${t.label} (${t.glass})`,
       `ZIP: ${$('zip').value.trim()||'—'}`,
       `Windows: ${$('num').value} | Upgrades: ${['paint','hardware','triple'].filter(id=>$(id).checked).join(', ') || 'None'}`,
       `Installed cost: ${$('kCost').textContent}`,
       `Discount: ${formatCents(dC)}`,
       `Energy savings (${years} yr): ${$('kSave').textContent}`,
       `Resale recoup: ${$('kResale').textContent}`,
-      `Total Return (Savings + Resale + Discount): ${$('totalReturn').textContent}`,
-      `Net ROI (Return − Cost + Discount): ${$('netRoiInline').textContent}`,
-      '',
-      `Rep note: ${$('priceNotes').value || '—'}`
+      `Total Return: ${$('totalReturn').textContent}`,
+      `Net ROI: ${$('netRoiInline').textContent}`
     ].join('\n');
   }
   function updatePreview(){ $('previewBox').textContent = buildSummary(); }
-  function copySummary(){ const txt = buildSummary(); navigator.clipboard.writeText(txt).then(()=>{ $('copyMsg').textContent='Summary copied to clipboard.'; }); }
+  function copySummary(){ navigator.clipboard.writeText(buildSummary()).then(()=>{ $('copyMsg').textContent='Summary copied to clipboard.'; }); }
   function sendEmail(){
     const name = $('leadName').value.trim();
     const email = $('leadEmail').value.trim();
@@ -454,66 +510,21 @@
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   }
 
-  // ----- Events wiring -----
+  // ----- Wiring -----
   document.addEventListener('input', e=>{
-    if (['num','zip','paint','hardware','triple','years','leadName','leadEmail'].includes(e.target.id)) calc();
+    if (['num','zip','paint','hardware','triple','years','billInput'].includes(e.target.id)) calc();
   });
   document.addEventListener('change', e=>{
     if (e.target.name==='tier'){ applyTierRules(); calc(); }
   });
   $('recalcBtn').addEventListener('click', calc);
 
-  // Drawer interactions
-  priceHandle.addEventListener('click', ()=>{ setDrawerOpen(priceDrawer.dataset.state==='closed'); });
-  closeBtn.addEventListener('click', ()=> setDrawerOpen(false));
-
-  function formatOnBlur(inputEl, errEl){
-    const cents = parseMoneyToCents(inputEl.value);
-    if (inputEl.value.trim()===''){ setErr(errEl,''); return null; }
-    if (cents==null){ setErr(errEl,'Please enter a valid number.'); return null; }
-    inputEl.value = formatCents(cents);
-    setErr(errEl,''); return cents;
-  }
-  priceInput.addEventListener('blur', ()=>{ formatOnBlur(priceInput, priceError); });
-  discountInput.addEventListener('blur', ()=>{ const c = formatOnBlur(discountInput, discountError); if (c!==null && c<0) setErr(discountError, 'Discount cannot be negative.'); });
-
-  priceForm.addEventListener('submit', (e)=>{
-    e.preventDefault();
-    const pCents = parseMoneyToCents(priceInput.value);
-    const dCents = parseMoneyToCents(discountInput.value || '0');
-    if (pCents==null){ setErr(priceError,'Please enter a valid number.'); return; }
-    if (dCents!=null && dCents<0){ setErr(discountError,'Discount cannot be negative.'); return; }
-    hiddenPriceCents.value    = String(Math.max(0, pCents));
-    hiddenDiscountCents.value = String(Math.max(0, dCents||0));
-    updatePriceSummary(); setErr(priceError,''); setErr(discountError,'');
-    window.dispatchEvent(new CustomEvent('projectPriceChanged',{ detail:{
-      priceCents: Number(hiddenPriceCents.value),
-      discountCents: Number(hiddenDiscountCents.value),
-      priceFormatted: formatCents(hiddenPriceCents.value),
-      discountFormatted: formatCents(hiddenDiscountCents.value),
-      note: priceNotes.value||null, timestamp:new Date().toISOString()
-    }}));
-    saveBtn.disabled = true; const old = saveBtn.textContent; saveBtn.textContent='Saved';
-    setTimeout(()=>{ saveBtn.disabled=false; saveBtn.textContent=old; }, 800);
-    calc();
-  });
-
-  clearBtn.addEventListener('click', ()=>{
-    priceInput.value=''; discountInput.value=''; priceNotes.value='';
-    hiddenPriceCents.value=0; hiddenDiscountCents.value=0;
-    updatePriceSummary(); setErr(priceError,''); setErr(discountError,'');
-    window.dispatchEvent(new CustomEvent('projectPriceChanged',{
-      detail:{ priceCents:0, discountCents:0, priceFormatted:formatCents(0), discountFormatted:formatCents(0), note:null, timestamp:new Date().toISOString() }
-    }));
-    calc();
-  });
-
-  // Init: ensure auto-estimate renders immediately (even with no manual price)
-  document.addEventListener('DOMContentLoaded', () => {
+  // Init (drawer closed; auto estimate active)
+  document.addEventListener('DOMContentLoaded', ()=>{
     applyTierRules();
-    setDrawerOpen(false);          // drawer closed by default
-    updatePriceSummary();          // handle text
-    calc();                        // initial auto estimate
+    setDrawerOpen(false);
+    updatePriceSummary();
+    calc();
   });
 </script>
 </body>
